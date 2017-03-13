@@ -21,7 +21,9 @@
 </head>
 
 <body>
-    <div id="map"></div>
+    <div id="map">
+        <input type="button" value="Delete" onclick="deleteShape()">
+    </div>
     <div id="layers">
         <div id="accordion">
             <h3><strong>Map Layers</strong></h3>
@@ -31,7 +33,7 @@
                 <table>
                     <input id="address" type="textbox" placeholder="County, State">
                     <input type="button" value="Search" onclick="codeAddress()">
-                    <input type="button" value="Delete" onclick="deleteShape()">
+                    
                 </table>
             </div>
         </div>
