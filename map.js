@@ -70,8 +70,9 @@ function initMap() {
     google.maps.event.addDomListener(document.getElementById('delete-button'), 'click', deleteSelectedShape);
 
     //---------------------------------------------------------------
+    google.maps.event.addDomListener(window, "load", initMap);
 }
-google.maps.event.addDomListener(window, "load", initMap);
+//google.maps.event.addDomListener(window, "load", initMap);
 
 // HELPER METHODS
 function getArrays(e) {
