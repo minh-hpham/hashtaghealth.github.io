@@ -43,6 +43,28 @@
     </script>
     <link rel="stylesheet" type="text/css" href="style.css" />
     <script type="text/javascript" src="map.js"></script>
+    <script type="text/javascript">
+        $(function () {
+            $("#landmarksKey").dialog({
+                autoOpen: false,
+                show: {
+                    effect: "false",
+                    duration: 1000
+                },
+                hide: {
+                    effect: "false",
+                    duration: 1000
+                }
+            });
+
+            $("#opener2").click(function () {
+                $("#landmarksKey").dialog("open");
+            });
+        });
+    </script>
+
+
+
     <script>
         /*
                 // Change this depending on the name of your PHP or XML file
