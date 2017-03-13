@@ -61,7 +61,7 @@ function initMap() {
 
     // GET BOUNDS TO LIMIT ONLY COORDINATES WITHIN THE SHAPES
     //---------------------------------------------------------------
-    google.maps.event.addListener(drawingManager, 'overlaycomplete', getArrays);
+    google.maps.event.addListener(drawingManager, 'overlaycomplete', showArrays);
 
     // Clear the current selection when the drawing mode is changed, or when the
     // map is clicked.
@@ -142,3 +142,25 @@ function getArrays(e) {
 //    var end = bounds.getSouthWest();
 //}
 
+function showArrays(event) {
+    // Since this polygon has only one path, we can call getPath() to return the
+    // MVCArray of LatLngs.
+    var vertices = this.getPath();
+
+    var contentString = '<b>Bermuda Triangle polygon</b><br>' +
+        'Clicked location: <br>' + event.latLng.lat() + ',' + event.latLng.lng() +
+        '<br>';
+
+    // Iterate over the vertices.
+    for (var i = 0; i < vertices.getLength() ; i++) {
+        var xy = vertices.getAt(i);
+        contentString += '<br>' + 'Coordinate ' + i + ':<br>' + xy.lat() + ',' +
+            xy.lng();
+    }
+
+    // Replace the info window's content and position.
+    infoWindow.setContent(contentString);
+    infoWindow.setPosition(event.latLng);
+
+    infoWindow.open(map);
+}
