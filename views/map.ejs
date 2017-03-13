@@ -1,0 +1,318 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>HashtagHealth Geoportal</title>
+    <meta name="viewport" content="initial-scale=1.0">
+    <meta charset="utf-8">
+    <style>
+        /* Always set the map height explicitly to define the size of the div
+        * element that contains the map. */
+        #map {
+            height: 100%;
+        }
+        /* Optional: Makes the sample page fill the window. */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+    <script async defer
+            type="text/javascript"
+            src="https://maps.google.com/maps/api/js?key=AIzaSyDRj3S_nk2WIVqQATfqV85DpVBnKI5k5NQ&callback=initMap&libraries=geometry,drawing">
+    </script>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+</head>
+<body>
+    <div id="map">
+        <button id="delete-button" class="btn">Delete selected shape</button>
+        <button id="save-button" class="btn">Save all</button>
+    </div>
+    <script>
+        var map;
+        var infoWindow;
+        var polygonArray;
+
+        function initMap() {
+            polygonArray = [];
+            var latlng = new google.maps.LatLng(40.00, -100.00);
+            var styledMap;
+            var styles;
+            var drawingManager;
+            //Create an array of styles.
+            styles = [{ "featureType": "all", "elementType": "geometry.fill", "stylers": [{ "weight": "2.00" }] }, { "featureType": "all", "elementType": "geometry.stroke", "stylers": [{ "color": "#9c9c9c" }] }, { "featureType": "all", "elementType": "labels.text", "stylers": [{ "visibility": "on" }] }, { "featureType": "landscape", "elementType": "all", "stylers": [{ "color": "#f2f2f2" }] }, { "featureType": "landscape", "elementType": "geometry.fill", "stylers": [{ "color": "#ffffff" }] }, { "featureType": "landscape.man_made", "elementType": "geometry.fill", "stylers": [{ "color": "#ffffff" }] }, { "featureType": "poi", "elementType": "all", "stylers": [{ "visibility": "off" }] }, { "featureType": "road", "elementType": "all", "stylers": [{ "saturation": -100 }, { "lightness": 45 }] }, { "featureType": "road", "elementType": "geometry.fill", "stylers": [{ "color": "#eeeeee" }] }, { "featureType": "road", "elementType": "labels.text.fill", "stylers": [{ "color": "#7b7b7b" }] }, { "featureType": "road", "elementType": "labels.text.stroke", "stylers": [{ "color": "#ffffff" }] }, { "featureType": "road.highway", "elementType": "all", "stylers": [{ "visibility": "simplified" }] }, { "featureType": "road.arterial", "elementType": "labels.icon", "stylers": [{ "visibility": "off" }] }, { "featureType": "transit", "elementType": "all", "stylers": [{ "visibility": "off" }] }, { "featureType": "water", "elementType": "all", "stylers": [{ "color": "#46bcec" }, { "visibility": "on" }] }, { "featureType": "water", "elementType": "geometry.fill", "stylers": [{ "color": "#c8d7d4" }] }, { "featureType": "water", "elementType": "labels.text.fill", "stylers": [{ "color": "#070707" }] }, { "featureType": "water", "elementType": "labels.text.stroke", "stylers": [{ "color": "#ffffff" }] }];
+
+            styledMap = new google.maps.StyledMapType(styles, { name: 'Styled Map' });
+
+            var mapOptions = {
+                zoom: 4,
+                center: latlng,
+                scaleControl: true,
+                //  mapTypeId: 'roadmap', //google.maps.MapTypeId.ROADMAP,// 'map_style' ],
+                disableDefaultUI: true,
+                mapTypeControlOptions: {
+                    position: google.maps.ControlPosition.TOP_LEFT
+                },
+                zoomControl: true,
+                zoomControlOptions: {
+                    position: google.maps.ControlPosition.LEFT_TOP
+                },
+                rotateControl: true,
+                rotateControlOptions: {
+                    position: google.maps.ControlPosition.LEFT_TOP
+                }
+
+            };
+
+            map = new google.maps.Map(document.getElementById('map'), mapOptions);
+
+            //Associate the styled map with the MapTypeId and set it to display.
+            map.mapTypes.set('map_style', styledMap);
+            map.setMapTypeId('map_style');// dynamically change map style
+
+            //var controlDiv = document.getElementById('save-button');
+            //var myControl = new MyControl(controlDiv);
+            //map.controls[google.maps.ControlPosition.LEFT_CENTER].push(controlDiv);
+
+            drawingManager = new google.maps.drawing.DrawingManager({
+                drawingMode: google.maps.drawing.OverlayType.POLYGON,
+                drawingControl: true,
+                drawingControlOptions: {
+                    position: google.maps.ControlPosition.TOP_RIGHT,
+                    drawingModes: ['circle', 'polygon', 'rectangle']
+                },
+                polygonOptions: {
+                    editable: true,
+                    clickable: true
+                },
+                circleOptions: {
+                    fillColor: '#ffff00',
+                    fillOpacity: .5,
+                    strokeWeight: 2,
+                    clickable: true,// available for click event
+                    editable: true,
+                    zIndex: 1
+                },
+                rectangleOptions: {
+                    fillColor: '#ffff00',
+                    fillOpacity: .5,
+                    strokeWeight: 2,
+                    clickable: true,
+                    editable: true,
+                    zIndex: 1
+                }
+            });
+
+            drawingManager.setMap(map);
+
+            // Add a listener to overlaycomplete event
+            //google.maps.event.addListener(drawingManager, 'overlaycomplete', function (event) {
+            //    google.maps.event.addListener(event.overlay, 'click', showArrays);
+            //    if (event.type == google.maps.drawing.OverlayType.CIRCLE) {
+            //        google.maps.event.addListener(event.overlay, 'click', boundFromCircle);
+            //    } else if (event.type == google.maps.drawing.OverlayType.RECTANGLE) {
+            //        google.maps.event.addListener(event.overlay, 'click', boundFromRectangle);
+            //    } else if (event.type == google.maps.drawing.OverlayType.MARKER) {
+            //        google.maps.event.addListener(event.overlay, 'click', writeInfo);
+            //    } else if (event.type == google.maps.drawing.OverlayType.POLYGON) {
+            //        google.maps.event.addListener(event.overlay, 'click', showArrays);
+            //    } else if (event.type == google.maps.drawing.OverlayType.POLYLINE) {
+            //        google.maps.event.addListener(event.overlay, 'click', showArrays);
+            //    }
+            //});           
+            //infoWindow = new google.maps.InfoWindow;
+
+            ////// Add a listener to polygon-complete event
+            //google.maps.event.addListener(drawingManager, 'overlaycomplete', function (event) {
+            //    document.getElementById('info').innerHTML += "polygon points:" + "<br>";
+            //    for (var i = 0; i < event.getPath().getLength() ; i++) {
+            //        document.getElementById('info').innerHTML += polygon.getPath().getAt(i).toUrlValue(6) + "<br>";
+            //    }
+            //    polygonArray.push(polygon);
+            //});
+
+            
+            // GET BOUNDS SO LIMIT ONLY COORDINATES WITHIN THE SHAPES
+            //---------------------------------------------------------------
+            google.maps.event.addListener(drawingManager, 'overlaycomplete', function (e) {
+                if (e.type !== google.maps.drawing.OverlayType.MARKER) {
+                    // Switch back to non-drawing mode after drawing a shape.
+                    drawingManager.setDrawingMode(null);
+                    // Add an event listener that selects the newly-drawn shape when the user
+                    // mouses down on it.
+                    var newShape = e.overlay;
+                    newShape.type = e.type;
+                    google.maps.event.addListener(newShape, 'click', function (e) {
+                        if (e.vertex !== undefined) {
+                            if (newShape.type === google.maps.drawing.OverlayType.POLYGON) {
+                                var path = newShape.getPaths().getAt(e.path);
+                                path.removeAt(e.vertex);
+                                if (path.length < 3) {
+                                    newShape.setMap(null);
+                                }
+                            }
+                            if (newShape.type === google.maps.drawing.OverlayType.POLYLINE) {
+                                var path = newShape.getPath();
+                                path.removeAt(e.vertex);
+                                if (path.length < 2) {
+                                    newShape.setMap(null);
+                                }
+                            }
+                        }
+                        //setSelection(newShape);  // set draggable and editable true
+                    });
+                   // setSelection(newShape);
+
+                    if (e.type == google.maps.drawing.OverlayType.POLYLINE || google.maps.drawing.OverlayType.POLYGON) {
+                        var locations = e.overlay.getPath().getArray();
+                        // assign coordinates to document id 'outout' to print out
+                        document.getElementById('output').innerHTML = locations.toString();
+
+
+                        //---------------OR-----------------------------------------------------------------
+                        //var newpolygons = [];
+                        //google.maps.event.addListener(drawingManager, 'polygoncomplete', function (polygon) {
+                        //    coordinates = (polygon.getPath().getArray());
+                        //    newpolygons.push(coordinates);
+                        //});
+                        //-----------------------------------------------------------------------------------
+                    }
+                    else {
+                        //get lat/lng bounds of the current shape
+                        var bounds = e.overlay.getBounds();
+                        var start = bounds.getNorthEast();
+                        var end = bounds.getSouthWest();
+                        var center = bounds.getCenter();
+                        //console.log(bounds.toString());    
+                        document.getElementById('output').innerHTML = bounds.toString();
+                    }
+
+
+                }
+            });
+            // Clear the current selection when the drawing mode is changed, or when the
+            // map is clicked.
+            google.maps.event.addListener(drawingManager, 'drawingmode_changed', clearSelection);
+            google.maps.event.addListener(map, 'click', clearSelection);
+            google.maps.event.addDomListener(document.getElementById('delete-button'), 'click', deleteSelectedShape);
+
+            //---------------------------------------------------------------
+
+            google.maps.event.addDomListener(window, "load", initMap);
+
+        }
+
+        //function boundFromCircle(event) {
+        //    var bounds = this.getBounds();
+        //    var start = bounds.getNorthEast();
+        //    var end = bounds.getSouthWest();
+        //    var center = bounds.getCenter();
+        //    var radius = event.overlay.getRadius();
+        //}
+
+        //function boundFromRectangle(event) {
+        //    var bounds = this.getBounds();
+        //    var start = bounds.getNorthEast();
+        //    var end = bounds.getSouthWest();
+        //}
+
+        //function showArrays(event) {
+        //    // Since this polygon has only one path, we can call getPath() to return the
+        //    // MVCArray of LatLngs.
+        //    var vertices = this.getPath();
+
+        //    var contentString = '<b>Bermuda Triangle polygon</b><br>' +
+        //        'Clicked location: <br>' + event.latLng.lat() + ',' + event.latLng.lng() +
+        //        '<br>';
+
+        //    // Iterate over the vertices.
+        //    for (var i = 0; i < vertices.getLength() ; i++) {
+        //        var xy = vertices.getAt(i);
+        //        contentString += '<br>' + 'Coordinate ' + i + ':<br>' + xy.lat() + ',' +
+        //            xy.lng();
+        //    }
+
+        //    // Replace the info window's content and position.
+        //    infoWindow.setContent(contentString);
+        //    infoWindow.setPosition(event.latLng);
+
+        //    infoWindow.open(map);
+        //}
+
+
+    </script>
+
+   
+
+    <script>
+        /*
+                // Change this depending on the name of your PHP or XML file
+                downloadUrl('https://storage.googleapis.com/mapsdevsite/json/mapmarkers2.xml', function (data) {
+                    var xml = data.responseXML;
+                    var markers = xml.documentElement.getElementsByTagName('marker');
+                    Array.prototype.forEach.call(markers, function (markerElem) {
+                        var name = markerElem.getAttribute('name');
+                        var address = markerElem.getAttribute('address');
+                        var type = markerElem.getAttribute('type');
+                        var point = new google.maps.LatLng(
+                            parseFloat(markerElem.getAttribute('lat')),
+                            parseFloat(markerElem.getAttribute('lng')));
+
+                        var infowincontent = document.createElement('div');
+                        var strong = document.createElement('strong');
+                        strong.textContent = name
+                        infowincontent.appendChild(strong);
+                        infowincontent.appendChild(document.createElement('br'));
+
+                        var text = document.createElement('text');
+                        text.textContent = address
+                        infowincontent.appendChild(text);
+                        var icon = customLabel[type] || {};
+                        var marker = new google.maps.Marker({
+                            map: map,
+                            position: point,
+                            label: icon.label
+                        });
+                        marker.addListener('click', function () {
+                            infoWindow.setContent(infowincontent);
+                            infoWindow.open(map, marker);
+                        });
+                    });
+                });
+
+
+
+
+                function downloadUrl(url, callback) {
+                    var request = window.ActiveXObject ?
+                        new ActiveXObject('Microsoft.XMLHTTP') :
+                        new XMLHttpRequest;
+
+                    request.onreadystatechange = function () {
+                        if (request.readyState == 4) {
+                            request.onreadystatechange = doNothing;
+                            callback(request, request.status);
+                        }
+                    };
+
+                    request.open('GET', url, true);
+                    request.send(null);
+                }
+
+                function doNothing() { }
+
+
+
+
+
+
+        */
+    </script>
+    <!--Goolge Analytics Code-->
+    <script>
+
+
+    </script>
+
+</body>
+</html>
