@@ -17,7 +17,7 @@ function initMap() {
         zoom: 4,
         center: latlng,
         scaleControl: true,
-        //  mapTypeId: 'roadmap', //google.maps.MapTypeId.ROADMAP,// 'map_style' ],
+        
         disableDefaultUI: true,
         mapTypeControlOptions: {
             position: google.maps.ControlPosition.TOP_LEFT
@@ -69,8 +69,33 @@ function initMap() {
 
     drawingManager.setMap(map);
 
+    var contextMenuOptions = {};
+    contextMenuOptions.classNames = { menu: 'context_menu', menuSeparator: 'context_menu_separator' };
+    var menuItems = [];
+    menuItems.push({ className: 'context_menu_item', eventName: 'display', label: 'Display Coordinate' });
+    menuItems.push({ className: 'context_menu_item', eventName: 'delete', label: 'Delete Shape' });
+    contextMenuOptions.menuItems = menuItems;
+    var contextMenu = new ContextMenu(map, contextMenuOptions);
     // Add a listener to show coordinate when right click
-    google.maps.event.addListener(drawingManager, 'overlaycomplete', showCoordinate );           
+    google.maps.event.addListener(drawingManager, 'overlaycomplete', function (event) {
+        google.maps.event.addListener(event.overlay, 'rightclick', function (event,mouseEvent) {
+            contextMenu.show(mouseEvent.latLng);
+        });
+    });
+    google.maps.event.addListener(contextMenu, 'menu_item_selected', function (latLng, eventName) {
+        switch (eventName) {
+            case 'display':
+                showArrays(event);
+                infoWindow = new google.maps.InfoWindow;
+                break;
+            case 'delete':
+                this.setMap(null);
+                break;
+            default:
+                // freak out
+                break;
+        }
+    });
     // GET BOUNDS SO LIMIT ONLY COORDINATES WITHIN THE SHAPES
     google.maps.event.addListener(drawingManager, 'overlaycomplete', getArrays);
     // Clear the current selection when the drawing mode is changed, or when the
@@ -82,19 +107,20 @@ function initMap() {
     //---------------------------------------------------------------
 }
 google.maps.event.addDomListener(window, 'load', initMap);
-//function boundFromCircle(event) {
-//    var bounds = this.getBounds();
-//    var start = bounds.getNorthEast();
-//    var end = bounds.getSouthWest();
-//    var center = bounds.getCenter();
-//    var radius = event.overlay.getRadius();
-//}
 
-//function boundFromRectangle(event) {
-//    var bounds = this.getBounds();
-//    var start = bounds.getNorthEast();
-//    var end = bounds.getSouthWest();
-//}
+function boundFromCircle(event) {
+    var bounds = this.getBounds();
+    var start = bounds.getNorthEast();
+    var end = bounds.getSouthWest();
+    var center = bounds.getCenter();
+    var radius = event.overlay.getRadius();
+}
+
+function boundFromRectangle(event) {
+    var bounds = this.getBounds();
+    var start = bounds.getNorthEast();
+    var end = bounds.getSouthWest();
+}
 function getArrays(e) {
     if (e.type !== google.maps.drawing.OverlayType.MARKER) {
         // Switch back to non-drawing mode after drawing a shape.
@@ -150,15 +176,46 @@ function getArrays(e) {
     }
 }
 function showCoordinate(event) {
-    google.maps.event.addListener(event.overlay, 'rightclick', showArrays);
-    infoWindow = new google.maps.InfoWindow;
+    var contextMenuOptions = {
+        menuItems: [
+            {
+                label: 'Display Coordinate', id: 'display', eventName: 'display'
+            },
+            {
+                label: 'Delete', id: 'delete', eventName: 'delete'
+            }
+        ],
+        pixelOffset: new google.maps.Point(10, -5),
+        zIndex: 5
+    };
+    var contextMenu = new ContextMenu(event.overlay, contextMenuOptions);
+    google.maps.event.addListener(contextMenu, 'menu_item_selected',
+        function (eventName) {
+            switch (eventName) {
+                case 'display':
+                    showArrays(event);
+                    infoWindow = new google.maps.InfoWindow;
+                    break;
+                case 'delete':
+                    this.setMap(null);
+                    break;
+                default:
+                    // freak out
+                    break;
+            }
+        }
+    );
+    
+
+    //google.maps.event.addListener(event.overlay, 'rightclick', showArrays);
+    
 }
 function showArrays(event) {
     // Since this polygon has only one path, we can call getPath() to return the
     // MVCArray of LatLngs.
     var vertices = this.getPath();
 
-    var contentString = '<b>Bermuda Triangle polygon</b><br>' +
+    var contentString = '<b>Polygon</b><br>' +
         'Clicked location: <br>' + event.latLng.lat() + ',' + event.latLng.lng() +
         '<br>';
 
