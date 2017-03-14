@@ -68,7 +68,17 @@ function initMap() {
     });
 
     drawingManager.setMap(map);
-
+    // Add a listener to show coordinate when right click
+    google.maps.event.addListener(drawingManager, 'overlaycomplete', function (event1) {
+        polygonArray.push(event1);
+        lastEvent = event1;
+        drawingManager.setDrawingMode(null);
+        google.maps.event.addListener(event1.overlay, 'rightclick', function (event) {
+            //this.setMap(null);
+            //lastEvent = event1.overlay;
+            contextMenu.show(event.latLng);
+        });
+    });
     //-------------------ADD MENU CONTEXT TO DELETE SHAPE-----------------
     //Defining the context menu class.
     function ContextMenuClass(map) {
@@ -117,21 +127,13 @@ function initMap() {
         infoWindow = new google.maps.InfoWindow;
     }
     function remove() {
-        lastEvent.setMap(null);
+        lastEvent.overlay.setMap(null);
     }
 
     //Creating a context menu to use it in event handler
     contextMenu = new ContextMenuClass(map);
     //-------------------DOESN'T WORK WITH MENU--------------------------------------
-    // Add a listener to show coordinate when right click
-    google.maps.event.addListener(drawingManager, 'overlaycomplete', function (event1) {
-        drawingManager.setDrawingMode(null);
-        google.maps.event.addListener(event1.overlay, 'rightclick', function (event) {
-            this.setMap(null);
-            lastEvent = event1.overlay;
-            // contextMenu.show(event.latLng);
-        });
-    });
+   
 
     // GET BOUNDS SO LIMIT ONLY COORDINATES WITHIN THE SHAPES
     google.maps.event.addListener(drawingManager, 'overlaycomplete', getArrays);
@@ -234,4 +236,29 @@ function showArrays(event) {
     infoWindow.setPosition(event.latLng);
 
     infoWindow.open(map);
+}
+// Google geocoding code
+
+function codeAddress() {
+    var address = document.getElementById("address").value;
+    geocoder.geocode({ 'address': address }, function (results, status) {
+        if (status == google.maps.GeocoderStatus.OK) {
+            map.setCenter(results[0].geometry.location);
+            map.setZoom(10);
+            var marker = new google.maps.Marker({
+                map: map,
+                draggable: true,
+                animation: google.maps.Animation.DROP,
+                position: results[0].geometry.location
+            });
+        } else {
+            alert("Geocode was not successful for the following reason: " + status);
+        }
+    });
+}
+function removeAll() {
+    for (var i = 0; i < polygonArray.length; i++) {
+        polygonArray[i].overlay.setMap(null);
+    }
+    polygonArray = [];
 }

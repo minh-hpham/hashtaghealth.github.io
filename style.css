@@ -87,6 +87,7 @@
 
    button, input[type='button'] {
     padding: .25em;
+    display: block;
 }
 
 .hide {
