@@ -32,7 +32,7 @@ function initMap() {
         drawingMode: google.maps.drawing.OverlayType.POLYGON,
         drawingControl: true,
         drawingControlOptions: {
-            position: google.maps.ControlPosition.TOP_RIGHT,
+            position: google.maps.ControlPosition.TOP_LEFT,
             drawingModes: ['circle', 'polygon', 'rectangle']
         },
         polygonOptions: {
@@ -71,9 +71,9 @@ function initMap() {
 
     //---------------------------------------------------------------
     startVisible('City Boundary');
-    google.maps.event.addDomListener(window, "load", initMap);
+    //google.maps.event.addDomListener(window, "load", initMap);
 }
-//google.maps.event.addDomListener(window, "load", initMap);
+google.maps.event.addDomListener(window, "load", initMap);
 
 // HELPER METHODS
 function getArrays(e) {
