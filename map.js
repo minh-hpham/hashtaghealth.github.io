@@ -70,7 +70,7 @@ function initMap() {
     google.maps.event.addDomListener(document.getElementById('delete-button'), 'click', deleteSelectedShape);
 
     //---------------------------------------------------------------
-    //startVisible('City Boundary');
+    startVisible('City Boundary');
     google.maps.event.addDomListener(window, "load", initMap);
 }
 //google.maps.event.addDomListener(window, "load", initMap);
@@ -166,12 +166,4 @@ function showArrays(event) {
 
     infoWindow.open(map);
 }
-function startVisible(name) {
-    for (i = 0; i < layers.length; i++) {
-        if (layers[i].name == name) {
-            layers[i].putOnMap();
-            var checkbox = document.getElementById(name);
-            checkbox.checked = true;
-        }
-    }
-};
+
