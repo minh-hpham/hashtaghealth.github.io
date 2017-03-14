@@ -1,38 +1,48 @@
-var map, infoWindow, drawingManager;
-var polygonArray = [];
-var latlng = new google.maps.LatLng(40.00, -100.00);
-var styles = [{ "featureType": "all", "elementType": "geometry.fill", "stylers": [{ "weight": "2.00" }] }, { "featureType": "all", "elementType": "geometry.stroke", "stylers": [{ "color": "#9c9c9c" }] }, { "featureType": "all", "elementType": "labels.text", "stylers": [{ "visibility": "on" }] }, { "featureType": "landscape", "elementType": "all", "stylers": [{ "color": "#f2f2f2" }] }, { "featureType": "landscape", "elementType": "geometry.fill", "stylers": [{ "color": "#ffffff" }] }, { "featureType": "landscape.man_made", "elementType": "geometry.fill", "stylers": [{ "color": "#ffffff" }] }, { "featureType": "poi", "elementType": "all", "stylers": [{ "visibility": "off" }] }, { "featureType": "road", "elementType": "all", "stylers": [{ "saturation": -100 }, { "lightness": 45 }] }, { "featureType": "road", "elementType": "geometry.fill", "stylers": [{ "color": "#eeeeee" }] }, { "featureType": "road", "elementType": "labels.text.fill", "stylers": [{ "color": "#7b7b7b" }] }, { "featureType": "road", "elementType": "labels.text.stroke", "stylers": [{ "color": "#ffffff" }] }, { "featureType": "road.highway", "elementType": "all", "stylers": [{ "visibility": "simplified" }] }, { "featureType": "road.arterial", "elementType": "labels.icon", "stylers": [{ "visibility": "off" }] }, { "featureType": "transit", "elementType": "all", "stylers": [{ "visibility": "off" }] }, { "featureType": "water", "elementType": "all", "stylers": [{ "color": "#46bcec" }, { "visibility": "on" }] }, { "featureType": "water", "elementType": "geometry.fill", "stylers": [{ "color": "#c8d7d4" }] }, { "featureType": "water", "elementType": "labels.text.fill", "stylers": [{ "color": "#070707" }] }, { "featureType": "water", "elementType": "labels.text.stroke", "stylers": [{ "color": "#ffffff" }] }];
-var styledMap = new google.maps.StyledMapType(styles, { name: 'Styled Map' });
-var mapOptions = {
-    zoom: 4,
-    center: latlng,
-    scaleControl: true,
-    //  mapTypeId: 'roadmap', //google.maps.MapTypeId.ROADMAP,// 'map_style' ],
-    disableDefaultUI: true,
-    mapTypeControlOptions: {
-        position: google.maps.ControlPosition.TOP_LEFT
-    },
-    zoomControl: true,
-    zoomControlOptions: {
-        position: google.maps.ControlPosition.LEFT_TOP
-    },
-    rotateControl: true,
-    rotateControlOptions: {
-        position: google.maps.ControlPosition.LEFT_TOP
-    }
-};
-
-map = new google.maps.Map(document.getElementById('map'), mapOptions);
-//Associate the styled map with the MapTypeId and set it to display.
-map.mapTypes.set('map_style', styledMap);
-map.setMapTypeId('map_style');// dynamically change map style
+var map;
+var infoWindow;
+var polygonArray;
 
 function initMap() {
+    polygonArray = [];
+    var latlng = new google.maps.LatLng(40.00, -100.00);
+    var styledMap;
+    var styles;
+    var drawingManager;
+    //Create an array of styles.
+    styles = [{ "featureType": "all", "elementType": "geometry.fill", "stylers": [{ "weight": "2.00" }] }, { "featureType": "all", "elementType": "geometry.stroke", "stylers": [{ "color": "#9c9c9c" }] }, { "featureType": "all", "elementType": "labels.text", "stylers": [{ "visibility": "on" }] }, { "featureType": "landscape", "elementType": "all", "stylers": [{ "color": "#f2f2f2" }] }, { "featureType": "landscape", "elementType": "geometry.fill", "stylers": [{ "color": "#ffffff" }] }, { "featureType": "landscape.man_made", "elementType": "geometry.fill", "stylers": [{ "color": "#ffffff" }] }, { "featureType": "poi", "elementType": "all", "stylers": [{ "visibility": "off" }] }, { "featureType": "road", "elementType": "all", "stylers": [{ "saturation": -100 }, { "lightness": 45 }] }, { "featureType": "road", "elementType": "geometry.fill", "stylers": [{ "color": "#eeeeee" }] }, { "featureType": "road", "elementType": "labels.text.fill", "stylers": [{ "color": "#7b7b7b" }] }, { "featureType": "road", "elementType": "labels.text.stroke", "stylers": [{ "color": "#ffffff" }] }, { "featureType": "road.highway", "elementType": "all", "stylers": [{ "visibility": "simplified" }] }, { "featureType": "road.arterial", "elementType": "labels.icon", "stylers": [{ "visibility": "off" }] }, { "featureType": "transit", "elementType": "all", "stylers": [{ "visibility": "off" }] }, { "featureType": "water", "elementType": "all", "stylers": [{ "color": "#46bcec" }, { "visibility": "on" }] }, { "featureType": "water", "elementType": "geometry.fill", "stylers": [{ "color": "#c8d7d4" }] }, { "featureType": "water", "elementType": "labels.text.fill", "stylers": [{ "color": "#070707" }] }, { "featureType": "water", "elementType": "labels.text.stroke", "stylers": [{ "color": "#ffffff" }] }];
+
+    styledMap = new google.maps.StyledMapType(styles, { name: 'Styled Map' });
+
+    var mapOptions = {
+        zoom: 4,
+        center: latlng,
+        scaleControl: true,
+        //  mapTypeId: 'roadmap', //google.maps.MapTypeId.ROADMAP,// 'map_style' ],
+        disableDefaultUI: true,
+        mapTypeControlOptions: {
+            position: google.maps.ControlPosition.TOP_LEFT
+        },
+        zoomControl: true,
+        zoomControlOptions: {
+            position: google.maps.ControlPosition.LEFT_TOP
+        },
+        rotateControl: true,
+        rotateControlOptions: {
+            position: google.maps.ControlPosition.LEFT_TOP
+        }
+
+    };
+
+    map = new google.maps.Map(document.getElementById('map'), mapOptions);
+
+    //Associate the styled map with the MapTypeId and set it to display.
+    map.mapTypes.set('map_style', styledMap);
+
     drawingManager = new google.maps.drawing.DrawingManager({
         drawingMode: google.maps.drawing.OverlayType.POLYGON,
         drawingControl: true,
         drawingControlOptions: {
-            position: google.maps.ControlPosition.TOP_LEFT,
+            position: google.maps.ControlPosition.TOP_CENTER,
             drawingModes: ['circle', 'polygon', 'rectangle']
         },
         polygonOptions: {
@@ -59,10 +69,10 @@ function initMap() {
 
     drawingManager.setMap(map);
 
-    // GET BOUNDS TO LIMIT ONLY COORDINATES WITHIN THE SHAPES
-    //---------------------------------------------------------------
-    google.maps.event.addListener(drawingManager, 'overlaycomplete', showArrays);
-
+    // Add a listener to show coordinate when right click
+    google.maps.event.addListener(drawingManager, 'overlaycomplete', showCoordinate );           
+    // GET BOUNDS SO LIMIT ONLY COORDINATES WITHIN THE SHAPES
+    google.maps.event.addListener(drawingManager, 'overlaycomplete', getArrays);
     // Clear the current selection when the drawing mode is changed, or when the
     // map is clicked.
     google.maps.event.addListener(drawingManager, 'drawingmode_changed', clearSelection);
@@ -70,13 +80,21 @@ function initMap() {
     google.maps.event.addDomListener(document.getElementById('delete-button'), 'click', deleteSelectedShape);
 
     //---------------------------------------------------------------
-    drawingManager.setPanel(document.getElementById('panel'));
-    startVisible('City Boundary');
-    //google.maps.event.addDomListener(window, "load", initMap);
 }
-google.maps.event.addDomListener(window, "load", initMap);
+google.maps.event.addDomListener(window, 'load', initMap);
+//function boundFromCircle(event) {
+//    var bounds = this.getBounds();
+//    var start = bounds.getNorthEast();
+//    var end = bounds.getSouthWest();
+//    var center = bounds.getCenter();
+//    var radius = event.overlay.getRadius();
+//}
 
-// HELPER METHODS
+//function boundFromRectangle(event) {
+//    var bounds = this.getBounds();
+//    var start = bounds.getNorthEast();
+//    var end = bounds.getSouthWest();
+//}
 function getArrays(e) {
     if (e.type !== google.maps.drawing.OverlayType.MARKER) {
         // Switch back to non-drawing mode after drawing a shape.
@@ -131,20 +149,10 @@ function getArrays(e) {
         }
     }
 }
-//function boundFromCircle(event) {
-//    var bounds = this.getBounds();
-//    var start = bounds.getNorthEast();
-//    var end = bounds.getSouthWest();
-//    var center = bounds.getCenter();
-//    var radius = event.overlay.getRadius();
-//}
-
-//function boundFromRectangle(event) {
-//    var bounds = this.getBounds();
-//    var start = bounds.getNorthEast();
-//    var end = bounds.getSouthWest();
-//}
-
+function showCoordinate(event) {
+    google.maps.event.addListener(event.overlay, 'rightclick', showArrays);
+    infoWindow = new google.maps.InfoWindow;
+}
 function showArrays(event) {
     // Since this polygon has only one path, we can call getPath() to return the
     // MVCArray of LatLngs.
@@ -167,4 +175,3 @@ function showArrays(event) {
 
     infoWindow.open(map);
 }
-

@@ -119,7 +119,7 @@
             //    } else if (event.type == google.maps.drawing.OverlayType.POLYLINE) {
             //        google.maps.event.addListener(event.overlay, 'click', showArrays);
             //    }
-            //});
+            //});           
             //infoWindow = new google.maps.InfoWindow;
 
             ////// Add a listener to polygon-complete event
@@ -131,7 +131,7 @@
             //    polygonArray.push(polygon);
             //});
 
-
+            
             // GET BOUNDS SO LIMIT ONLY COORDINATES WITHIN THE SHAPES
             //---------------------------------------------------------------
             google.maps.event.addListener(drawingManager, 'overlaycomplete', function (e) {
@@ -183,7 +183,7 @@
                         var start = bounds.getNorthEast();
                         var end = bounds.getSouthWest();
                         var center = bounds.getCenter();
-                        //console.log(bounds.toString());
+                        //console.log(bounds.toString());    
                         document.getElementById('output').innerHTML = bounds.toString();
                     }
 
@@ -242,7 +242,7 @@
 
     </script>
 
-
+   
 
     <script>
         /*

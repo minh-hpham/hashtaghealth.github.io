@@ -1,30 +1,44 @@
 ﻿<!DOCTYPE html>
 <html>
 <head>
-    <title>HashtagHealth Geoportal Beta</title>
-    <meta name="viewport" content="initial-scale=1.0">
-    <meta charset="utf-8">
-    <style>
-        /* Always set the map height explicitly to define the size of the div
-        * element that contains the map. */
-        #map {
+    <title>HashtagHealth-Geoportal</title>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <style type="text/css">
+        html {
             height: 100%;
         }
-        /* Optional: Makes the sample page fill the window. */
-        html, body {
+
+        body {
             height: 100%;
             margin: 0;
             padding: 0;
         }
+
+        #map-canvas {
+            height: 100%;
+        }
     </style>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css" />
+    <!--THIS IS THE GOOGLE ANALYTICS TRACKING CODE-->
+    <script>
+        (function (i, s, o, g, r, a, m) {
+            i['GoogleAnalyticsObject'] = r; i[r] = i[r] || function () {
+                (i[r].q = i[r].q || []).push(arguments)
+            }, i[r].l = 1 * new Date(); a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0]; a.async = 1; a.src = g; m.parentNode.insertBefore(a, m)
+        })(window, document, 'script', 'https://www.google-analytics.com/analytics.js', 'ga');
+
+        ga('create', 'UA-85783082-1', 'auto');
+        ga('send', 'pageview');
+
+    </script>
+
 
 </head>
 
 <body>
     <div id="map"></div>
-    <div id="floating-panel">
-        <input onclick="remove();" type=button value="Remove shape">
-    </div>
     <div id="layers">
         <div id="accordion">
             <h3><strong>Map Layers</strong></h3>
@@ -32,27 +46,31 @@
                 <table></table>
                 <br />
                 <table>
+                    <input type="button" value="Delete" onclick="removeShape()">                    
                     <input id="address" type="textbox" placeholder="County, State">
                     <input type="button" value="Search" onclick="codeAddress()">
-                    
                 </table>
             </div>
         </div>
     </div>
-    <script src="http://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
-    <script async defer
-            type="text/javascript"
-            src="https://maps.google.com/maps/api/js?key=AIzaSyDRj3S_nk2WIVqQATfqV85DpVBnKI5k5NQ&libraries=geometry,drawing">
+
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="https://code.jquery.com/jquery-1.9.1.js"></script>
+    <script type="text/javascript"
+            src="https://maps.google.com/maps/api/js?key=AIzaSyDRj3S_nk2WIVqQATfqV85DpVBnKI5k5NQ&callback=initMap&libraries=geometry,drawing"async defer>
     </script>
+   
     <link rel="stylesheet" type="text/css" href="style.css" />
     <script type="text/javascript" src="map.js"></script>
-    
+    <script src="https://code.jquery.com/ui/1.10.2/jquery-ui.js"></script>
+
     <script type="text/javascript">
         $(function () {
             $("#landmarksKey").dialog({
-                autoOpen: false,
+                autoOpen: true,
                 show: {
-                    effect: "false",
+                    effect: "true",
                     duration: 1000
                 },
                 hide: {
@@ -66,7 +84,6 @@
             });
         });
     </script>
-
     <script type="text/javascript">
         $(function () {
             $("#accordion").accordion();
@@ -231,70 +248,6 @@
                 }
             }
         };
-
-    </script>
-
-    <script>
-        /*
-                // Change this depending on the name of your PHP or XML file
-                downloadUrl('https://storage.googleapis.com/mapsdevsite/json/mapmarkers2.xml', function (data) {
-                    var xml = data.responseXML;
-                    var markers = xml.documentElement.getElementsByTagName('marker');
-                    Array.prototype.forEach.call(markers, function (markerElem) {
-                        var name = markerElem.getAttribute('name');
-                        var address = markerElem.getAttribute('address');
-                        var type = markerElem.getAttribute('type');
-                        var point = new google.maps.LatLng(
-                            parseFloat(markerElem.getAttribute('lat')),
-                            parseFloat(markerElem.getAttribute('lng')));
-
-                        var infowincontent = document.createElement('div');
-                        var strong = document.createElement('strong');
-                        strong.textContent = name
-                        infowincontent.appendChild(strong);
-                        infowincontent.appendChild(document.createElement('br'));
-
-                        var text = document.createElement('text');
-                        text.textContent = address
-                        infowincontent.appendChild(text);
-                        var icon = customLabel[type] || {};
-                        var marker = new google.maps.Marker({
-                            map: map,
-                            position: point,
-                            label: icon.label
-                        });
-                        marker.addListener('click', function () {
-                            infoWindow.setContent(infowincontent);
-                            infoWindow.open(map, marker);
-                        });
-                    });
-                });
-
-
-
-
-                function downloadUrl(url, callback) {
-                    var request = window.ActiveXObject ?
-                        new ActiveXObject('Microsoft.XMLHTTP') :
-                        new XMLHttpRequest;
-
-                    request.onreadystatechange = function () {
-                        if (request.readyState == 4) {
-                            request.onreadystatechange = doNothing;
-                            callback(request, request.status);
-                        }
-                    };
-
-                    request.open('GET', url, true);
-                    request.send(null);
-                }
-
-                function doNothing() { }
-        */
-    </script>
-    <!--Goolge Analytics Code-->
-    <script>
-
 
     </script>
 
