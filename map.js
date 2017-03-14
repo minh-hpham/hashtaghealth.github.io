@@ -73,7 +73,7 @@ function initMap() {
     //startVisible('City Boundary');
     google.maps.event.addDomListener(window, "load", initMap);
 }
-google.maps.event.addDomListener(window, "load", initMap);
+//google.maps.event.addDomListener(window, "load", initMap);
 
 // HELPER METHODS
 function getArrays(e) {
