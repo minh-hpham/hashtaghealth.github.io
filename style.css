@@ -21,7 +21,19 @@
 	left: 0;
 	top: 0;
 	}
+/*	start styles for the ContextMenu	*/
+.contextmenu{
+ visibility: hidden;
 
+ 
+ width: 90px;
+ height: 25px;
+ padding: 5px;
+ position: relative;
+ background-color:white;
+ border:1px solid gray;
+}
+/*	end styles for the ContextMenu	*/
 #layers {
     position:fixed;
     top: 10px;
