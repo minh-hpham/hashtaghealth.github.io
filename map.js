@@ -70,6 +70,7 @@ function initMap() {
     google.maps.event.addDomListener(document.getElementById('delete-button'), 'click', deleteSelectedShape);
 
     //---------------------------------------------------------------
+    drawingManager.setPanel(document.getElementById('panel'));
     startVisible('City Boundary');
     //google.maps.event.addDomListener(window, "load", initMap);
 }
