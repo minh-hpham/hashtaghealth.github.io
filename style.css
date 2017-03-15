@@ -24,11 +24,9 @@
 /*	start styles for the ContextMenu	*/
 .contextmenu{
  visibility: hidden;
-
- 
- width: 90px;
- height: 25px;
- padding: 5px;
+ width: 80px;
+ height: 15px;
+ padding: 2px;
  position: relative;
  background-color:white;
  border:1px solid gray;

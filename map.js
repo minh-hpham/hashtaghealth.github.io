@@ -1,7 +1,7 @@
-var map;
-var infoWindow;
-var polygonArray;
-var contextMenu, lastEvent;
+var map, cartoLayer, infoWindow, polygonArray, contextMenu, lastCoordinate;
+
+
+
 function initMap() {
     polygonArray = [];
     var latlng = new google.maps.LatLng(40.00, -100.00);
@@ -34,9 +34,51 @@ function initMap() {
     };
 
     map = new google.maps.Map(document.getElementById('map'), mapOptions);
-
     //Associate the styled map with the MapTypeId and set it to display.
     map.mapTypes.set('map_style', styledMap);
+    
+    //-------------------ADD MENU CONTEXT TO DELETE SHAPE-----------------
+    //Defining the context menu class.
+    function ContextMenuClass(map) {
+        this.setMap(map);
+        this.map = map;
+        this.mapDiv = map.getDiv();
+        this.menuDiv = null;
+    };
+    ContextMenuClass.prototype = new google.maps.OverlayView();
+    ContextMenuClass.prototype.draw = function () { };
+    ContextMenuClass.prototype.onAdd = function () {
+        var that = this;
+        this.menuDiv = document.createElement('div');
+        this.menuDiv.className = 'contextmenu';
+        this.menuDiv.innerHTML = '<a id="rm">Remove Shape</a>';      
+        //this.menuDiv.innerHTML = '<a href="javascript:remove()">Remove Shape</a>';
+        this.getPanes().floatPane.appendChild(this.menuDiv);
+        //This event listener below will close the context menu
+        //on map click
+        google.maps.event.addListener(this.map, 'click', function (mouseEvent) {
+            that.hide();
+        });
+    };
+    ContextMenuClass.prototype.onRemove = function () {
+        this.menuDiv.parentNode.removeChild(this.menuDiv);
+    };
+    ContextMenuClass.prototype.show = function (coord) {
+        var proj = this.getProjection();
+        var mouseCoords = proj.fromLatLngToDivPixel(coord);
+        var left = Math.floor(mouseCoords.x);
+        var top = Math.floor(mouseCoords.y);
+        this.menuDiv.style.display = 'block';
+        this.menuDiv.style.left = left + 'px';
+        this.menuDiv.style.top = top + 'px';
+        this.menuDiv.style.visibility = 'visible';
+    };
+    ContextMenuClass.prototype.hide = function (x, y) {
+        this.menuDiv.style.visibility = 'hidden';
+    }
+    //Creating a context menu to use it in event handler
+    contextMenu = new ContextMenuClass(map);
+    //-------------------DOESN'T WORK WITH MENU--------------------------------------
 
     drawingManager = new google.maps.drawing.DrawingManager({
         drawingMode: google.maps.drawing.OverlayType.POLYGON,
@@ -71,79 +113,19 @@ function initMap() {
     // Add a listener to show coordinate when right click
     google.maps.event.addListener(drawingManager, 'overlaycomplete', function (event1) {
         polygonArray.push(event1);
-        lastEvent = event1;
-        drawingManager.setDrawingMode(null);
+        drawingManager.setDrawingMode(null);      
         google.maps.event.addListener(event1.overlay, 'rightclick', function (event) {
-            //this.setMap(null);
-            //lastEvent = event1.overlay;
             contextMenu.show(event.latLng);
+            document.getElementById('rm').addEventListener('click', function () {
+                event1.overlay.setMap(null);
+            });
         });
     });
-    //-------------------ADD MENU CONTEXT TO DELETE SHAPE-----------------
-    //Defining the context menu class.
-    function ContextMenuClass(map) {
-        this.setMap(map);
-        this.map = map;
-        this.mapDiv = map.getDiv();
-        this.menuDiv = null;
-    };
-    ContextMenuClass.prototype = new google.maps.OverlayView();
-    ContextMenuClass.prototype.draw = function () { };
-    ContextMenuClass.prototype.onAdd = function () {
-        var that = this;
-        this.menuDiv = document.createElement('div');
-        this.menuDiv.className = 'contextmenu';
-        this.menuDiv.innerHTML = '<a href="javascript:display()">Show Coordinate</a><br><a href="javascript:remove()">Remove Shape</a><br>';
-        //this.menuDiv.innerHTML = '<a href="javascript:remove()">Remove Shape</a>';
-        this.getPanes().floatPane.appendChild(this.menuDiv);
-        //This event listener below will close the context menu
-        //on map click
-        google.maps.event.addListener(this.map, 'click', function (mouseEvent) {
-            that.hide();
-        });
-    };
-    ContextMenuClass.prototype.onRemove = function () {
-        this.menuDiv.parentNode.removeChild(this.menuDiv);
-    };
-    ContextMenuClass.prototype.show = function (coord) {
-        var proj = this.getProjection();
-        var mouseCoords = proj.fromLatLngToDivPixel(coord);
-        var left = Math.floor(mouseCoords.x);
-        var top = Math.floor(mouseCoords.y);
-        this.menuDiv.style.display = 'block';
-        this.menuDiv.style.left = left + 'px';
-        this.menuDiv.style.top = top + 'px';
-        this.menuDiv.style.visibility = 'visible';
-    };
-    ContextMenuClass.prototype.hide = function (x, y) {
-        this.menuDiv.style.visibility = 'hidden';
-    }
-    //Defining context menu functions
-    function display() {
-        var contentString = 'Clicked location: <br>' + lastEvent.latLng.lat() + ',' + lastEvent.latLng.lng() + '<br>';
-        infoWindow.setContent(contentString);
-        infoWindow.setPosition(lastEvent.latLng);
-        infoWindow.open(map);
-        infoWindow = new google.maps.InfoWindow;
-    }
-    function remove() {
-        lastEvent.overlay.setMap(null);
-    }
 
-    //Creating a context menu to use it in event handler
-    contextMenu = new ContextMenuClass(map);
-    //-------------------DOESN'T WORK WITH MENU--------------------------------------
-   
+
 
     // GET BOUNDS SO LIMIT ONLY COORDINATES WITHIN THE SHAPES
     google.maps.event.addListener(drawingManager, 'overlaycomplete', getArrays);
-    // Clear the current selection when the drawing mode is changed, or when the
-    // map is clicked.
-    google.maps.event.addListener(drawingManager, 'drawingmode_changed', clearSelection);
-    google.maps.event.addListener(map, 'click', clearSelection);
-    google.maps.event.addDomListener(document.getElementById('delete-button'), 'click', deleteSelectedShape);
-
-    //---------------------------------------------------------------
 }
 google.maps.event.addDomListener(window, 'load', initMap);
 
@@ -262,3 +244,61 @@ function removeAll() {
     }
     polygonArray = [];
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//-------------------CARTO LAYER - INCOMPLETE--------------------------------------
+/*
+var cartoStyle = '#world_borders { ' + 'polygon-fill: #1a9850; ' + 'polygon-opacity:0.7; ' + '} ' + '#world_borders [pop2005 > 10000000] { ' + 'polygon-fill: #8cce8a ' + '} ' + '#world_borders [pop2005 > 40000000] { ' + 'polygon-fill: #fed6b0 ' + '} ' + '#world_borders [pop2005 > 70000000] { ' + 'polygon-fill: #d73027 ' + '} ';
+//Creating CartoDB layer and add it to map.
+cartodb.createLayer(map, {
+    user_name: 'gmapcookbook',
+    type: 'cartodb',
+    sublayers: [{
+        sql: 'SELECT * FROM world_borders',
+        cartocss: cartoStyle,
+        interactivity: 'cartodb_id, name, pop2005, area',
+    }]
+})
+.addTo(map)
+.done(function (layer) {
+    cartoLayer = layer;
+    //Enabling popup info window
+    cartodb.vis.Vis.addInfowindow(map, layer.getSubLayer(0),
+    ['name', 'pop2005', 'area']);
+    //Enabling UTFGrid layer to add interactivity.
+    layer.setInteraction(true);
+    layer.on('featureOver', function (e, latlng, pos, data) {
+        $('#infoDiv').html('<b>Info : </b>' + data.name +
+        ' (Population : ' + data.pop2005 + ')');
+    });
+});
+//Listening click event of the search button to filter the
+//data of map
+$('#search').click(function () {
+    var txtValue = $('#address').val();
+    cartoLayer.setQuery('SELECT * FROM world_borders WHERE name LIKE \'%' + txtValue + '%\'');
+    if (txtValue == '') {
+        cartoLayer.setCartoCSS(cartoStyle);
+    }
+    else {
+        cartoLayer.setCartoCSS('#world_borders {polygon-fill: #00000d; polygon-opacity:0.7; }');
+    }
+});
+*/
