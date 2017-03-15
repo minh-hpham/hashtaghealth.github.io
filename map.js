@@ -1,57 +1,145 @@
 var map, cartoLayer, infoWindow, polygonArray, contextMenu, lastCoordinate;
+//-------------------------------------------BASE MAP--------------------------------------------
+polygonArray = [];
+var latlng = new google.maps.LatLng(40.00, -100.00);
+var styledMap;
+var styles;
+var drawingManager;
+//Create an array of styles.
+styles = [{ "featureType": "all", "elementType": "geometry.fill", "stylers": [{ "weight": "2.00" }] }, { "featureType": "all", "elementType": "geometry.stroke", "stylers": [{ "color": "#9c9c9c" }] }, { "featureType": "all", "elementType": "labels.text", "stylers": [{ "visibility": "on" }] }, { "featureType": "landscape", "elementType": "all", "stylers": [{ "color": "#f2f2f2" }] }, { "featureType": "landscape", "elementType": "geometry.fill", "stylers": [{ "color": "#ffffff" }] }, { "featureType": "landscape.man_made", "elementType": "geometry.fill", "stylers": [{ "color": "#ffffff" }] }, { "featureType": "poi", "elementType": "all", "stylers": [{ "visibility": "off" }] }, { "featureType": "road", "elementType": "all", "stylers": [{ "saturation": -100 }, { "lightness": 45 }] }, { "featureType": "road", "elementType": "geometry.fill", "stylers": [{ "color": "#eeeeee" }] }, { "featureType": "road", "elementType": "labels.text.fill", "stylers": [{ "color": "#7b7b7b" }] }, { "featureType": "road", "elementType": "labels.text.stroke", "stylers": [{ "color": "#ffffff" }] }, { "featureType": "road.highway", "elementType": "all", "stylers": [{ "visibility": "simplified" }] }, { "featureType": "road.arterial", "elementType": "labels.icon", "stylers": [{ "visibility": "off" }] }, { "featureType": "transit", "elementType": "all", "stylers": [{ "visibility": "off" }] }, { "featureType": "water", "elementType": "all", "stylers": [{ "color": "#46bcec" }, { "visibility": "on" }] }, { "featureType": "water", "elementType": "geometry.fill", "stylers": [{ "color": "#c8d7d4" }] }, { "featureType": "water", "elementType": "labels.text.fill", "stylers": [{ "color": "#070707" }] }, { "featureType": "water", "elementType": "labels.text.stroke", "stylers": [{ "color": "#ffffff" }] }];
 
+styledMap = new google.maps.StyledMapType(styles, { name: 'Styled Map' });
 
+var mapOptions = {
+    zoom: 4,
+    center: latlng,
+    scaleControl: true,
 
+    disableDefaultUI: true,
+    mapTypeControlOptions: {
+        position: google.maps.ControlPosition.TOP_LEFT
+    },
+    zoomControl: true,
+    zoomControlOptions: {
+        position: google.maps.ControlPosition.LEFT_TOP
+    },
+    rotateControl: true,
+    rotateControlOptions: {
+        position: google.maps.ControlPosition.LEFT_TOP
+    }
+
+};
+
+map = new google.maps.Map(document.getElementById('map'), mapOptions);
+//Associate the styled map with the MapTypeId and set it to display.
+map.mapTypes.set('map_style', styledMap);
+//-----------------------------------------DRAWN SHAPE------------------------------------------
+var drawnOptions = {
+    drawingMode: google.maps.drawing.OverlayType.POLYGON,
+    drawingControl: true,
+    drawingControlOptions: {
+        position: google.maps.ControlPosition.TOP_CENTER,
+        drawingModes: ['circle', 'polygon', 'rectangle']
+    },
+    polygonOptions: {
+        editable: true,
+        clickable: true
+    },
+    circleOptions: {
+        fillColor: '#ffff00',
+        fillOpacity: .5,
+        strokeWeight: 2,
+        clickable: true,// available for click event
+        editable: true,
+        zIndex: 1
+    },
+    rectangleOptions: {
+        fillColor: '#ffff00',
+        fillOpacity: .5,
+        strokeWeight: 2,
+        clickable: true,
+        editable: true,
+        zIndex: 1
+    }
+};
+//-----------------------------------------CARTO DB LAYER---------------------------------------
+var layers = new Array();
+var cb_i = 0;
+
+var CartoDBLayer = function (n, u, c) {
+    this.category = c;
+    this.name = n;
+    var l;
+
+    cb_i++;
+    var l_in = cb_i;
+
+    this.putOnMap = function () {
+        cartodb.createLayer(map, u).addTo(map, l_in).on('done', function (layer) {
+            l = layer;
+        });
+    };
+    this.clearFromMap = function () {
+        l.getSubLayer(0).hide();
+        l.remove();
+        l.clear();
+
+    };
+    this.isOnMap = function () {
+        return false;
+    };
+};
+layers.push(new CartoDBLayer('Age Adjusted Mortality', 'https://hashtaghealth.carto.com/api/v2/viz/4fec2e9a-923f-11e6-9aca-0e3ebc282e83/viz.json', 'Map Layers'));
+layers.push(new CartoDBLayer('Premature Mortality Rate', 'https://hashtaghealth.carto.com/api/v2/viz/316ace20-a1c1-498d-ad60-ca2e20466449/viz.json', 'Map Layers'));
+layers.push(new CartoDBLayer('Diabetes', 'https://hashtaghealth.carto.com/api/v2/viz/e3bb2ea8-055d-4214-8479-187ffca6622a/viz.json', 'Map Layers'));
+layers.push(new CartoDBLayer('Obesity', 'https://hashtaghealth.carto.com/api/v2/viz/73fd643d-f500-48c5-9e3a-99387051b871/viz.json', 'Map Layers'));
+layers.push(new CartoDBLayer('Fair/Poor Health', 'https://hashtaghealth.carto.com/api/v2/viz/54fbfc8d-3125-481b-8d24-e5359c972d86/viz.json', 'Map Layers'));
+layers.push(new CartoDBLayer('Physical Inactivity', 'https://hashtaghealth.carto.com/api/v2/viz/5b503f86-c3b5-4d28-ae69-fe082e795200/viz.json', 'Map Layers'));
+//-----------------------------------------INITIALIZE MAP---------------------------------------
 function initMap() {
-    polygonArray = [];
-    var latlng = new google.maps.LatLng(40.00, -100.00);
-    var styledMap;
-    var styles;
-    var drawingManager;
-    //Create an array of styles.
-    styles = [{ "featureType": "all", "elementType": "geometry.fill", "stylers": [{ "weight": "2.00" }] }, { "featureType": "all", "elementType": "geometry.stroke", "stylers": [{ "color": "#9c9c9c" }] }, { "featureType": "all", "elementType": "labels.text", "stylers": [{ "visibility": "on" }] }, { "featureType": "landscape", "elementType": "all", "stylers": [{ "color": "#f2f2f2" }] }, { "featureType": "landscape", "elementType": "geometry.fill", "stylers": [{ "color": "#ffffff" }] }, { "featureType": "landscape.man_made", "elementType": "geometry.fill", "stylers": [{ "color": "#ffffff" }] }, { "featureType": "poi", "elementType": "all", "stylers": [{ "visibility": "off" }] }, { "featureType": "road", "elementType": "all", "stylers": [{ "saturation": -100 }, { "lightness": 45 }] }, { "featureType": "road", "elementType": "geometry.fill", "stylers": [{ "color": "#eeeeee" }] }, { "featureType": "road", "elementType": "labels.text.fill", "stylers": [{ "color": "#7b7b7b" }] }, { "featureType": "road", "elementType": "labels.text.stroke", "stylers": [{ "color": "#ffffff" }] }, { "featureType": "road.highway", "elementType": "all", "stylers": [{ "visibility": "simplified" }] }, { "featureType": "road.arterial", "elementType": "labels.icon", "stylers": [{ "visibility": "off" }] }, { "featureType": "transit", "elementType": "all", "stylers": [{ "visibility": "off" }] }, { "featureType": "water", "elementType": "all", "stylers": [{ "color": "#46bcec" }, { "visibility": "on" }] }, { "featureType": "water", "elementType": "geometry.fill", "stylers": [{ "color": "#c8d7d4" }] }, { "featureType": "water", "elementType": "labels.text.fill", "stylers": [{ "color": "#070707" }] }, { "featureType": "water", "elementType": "labels.text.stroke", "stylers": [{ "color": "#ffffff" }] }];
+    //-----------------------------DRAWING MANAGER AND ITS CONTENT-----------------------------------------
+    //Creating a context menu to use it in event handler
+    ContextMenuSetUp();
+    contextMenu = new ContextMenuClass(map);
 
-    styledMap = new google.maps.StyledMapType(styles, { name: 'Styled Map' });
+    drawingManager = new google.maps.drawing.DrawingManager(drawnOptions);
+    drawingManager.setMap(map);
+    // Add a listener to show coordinate when right click
+    google.maps.event.addListener(drawingManager, 'overlaycomplete', function (event1) {
+        polygonArray.push(event1);
+        drawingManager.setDrawingMode(null);
+        google.maps.event.addListener(event1.overlay, 'rightclick', function (event) {
+            contextMenu.show(event.latLng);
+            document.getElementById('rm').addEventListener('click', function () {
+                event1.overlay.setMap(null);
+            });
+        });
+    });
+    //----------------------------END OF DRAWING MANAGER-------------------------------------------------
 
-    var mapOptions = {
-        zoom: 4,
-        center: latlng,
-        scaleControl: true,
+    // GET BOUNDS SO LIMIT ONLY COORDINATES WITHIN THE SHAPES
+    // google.maps.event.addListener(drawingManager, 'overlaycomplete', getArrays);
+}
+google.maps.event.addDomListener(window, 'load', initMap);
 
-        disableDefaultUI: true,
-        mapTypeControlOptions: {
-            position: google.maps.ControlPosition.TOP_LEFT
-        },
-        zoomControl: true,
-        zoomControlOptions: {
-            position: google.maps.ControlPosition.LEFT_TOP
-        },
-        rotateControl: true,
-        rotateControlOptions: {
-            position: google.maps.ControlPosition.LEFT_TOP
-        }
 
-    };
-
-    map = new google.maps.Map(document.getElementById('map'), mapOptions);
-    //Associate the styled map with the MapTypeId and set it to display.
-    map.mapTypes.set('map_style', styledMap);
-    
-    //-------------------ADD MENU CONTEXT TO DELETE SHAPE-----------------
-    //Defining the context menu class.
-    function ContextMenuClass(map) {
-        this.setMap(map);
-        this.map = map;
-        this.mapDiv = map.getDiv();
-        this.menuDiv = null;
-    };
+//-------------------MENU CONTEXT TO DELETE SHAPE---------------------
+// Defining the context menu class.
+function ContextMenuClass(map) {
+    this.setMap(map);
+    this.map = map;
+    this.mapDiv = map.getDiv();
+    this.menuDiv = null;
+};
+// set up function for this menu
+function ContextMenuSetUp() {
     ContextMenuClass.prototype = new google.maps.OverlayView();
     ContextMenuClass.prototype.draw = function () { };
     ContextMenuClass.prototype.onAdd = function () {
         var that = this;
         this.menuDiv = document.createElement('div');
         this.menuDiv.className = 'contextmenu';
-        this.menuDiv.innerHTML = '<a id="rm">Remove Shape</a>';      
+        this.menuDiv.innerHTML = '<a id="rm">Remove Shape</a>';
         //this.menuDiv.innerHTML = '<a href="javascript:remove()">Remove Shape</a>';
         this.getPanes().floatPane.appendChild(this.menuDiv);
         //This event listener below will close the context menu
@@ -76,59 +164,14 @@ function initMap() {
     ContextMenuClass.prototype.hide = function (x, y) {
         this.menuDiv.style.visibility = 'hidden';
     }
-    //Creating a context menu to use it in event handler
-    contextMenu = new ContextMenuClass(map);
-    //-------------------DOESN'T WORK WITH MENU--------------------------------------
-
-    drawingManager = new google.maps.drawing.DrawingManager({
-        drawingMode: google.maps.drawing.OverlayType.POLYGON,
-        drawingControl: true,
-        drawingControlOptions: {
-            position: google.maps.ControlPosition.TOP_CENTER,
-            drawingModes: ['circle', 'polygon', 'rectangle']
-        },
-        polygonOptions: {
-            editable: true,
-            clickable: true
-        },
-        circleOptions: {
-            fillColor: '#ffff00',
-            fillOpacity: .5,
-            strokeWeight: 2,
-            clickable: true,// available for click event
-            editable: true,
-            zIndex: 1
-        },
-        rectangleOptions: {
-            fillColor: '#ffff00',
-            fillOpacity: .5,
-            strokeWeight: 2,
-            clickable: true,
-            editable: true,
-            zIndex: 1
-        }
-    });
-
-    drawingManager.setMap(map);
-    // Add a listener to show coordinate when right click
-    google.maps.event.addListener(drawingManager, 'overlaycomplete', function (event1) {
-        polygonArray.push(event1);
-        drawingManager.setDrawingMode(null);      
-        google.maps.event.addListener(event1.overlay, 'rightclick', function (event) {
-            contextMenu.show(event.latLng);
-            document.getElementById('rm').addEventListener('click', function () {
-                event1.overlay.setMap(null);
-            });
-        });
-    });
-
-
-
-    // GET BOUNDS SO LIMIT ONLY COORDINATES WITHIN THE SHAPES
-    google.maps.event.addListener(drawingManager, 'overlaycomplete', getArrays);
 }
-google.maps.event.addDomListener(window, 'load', initMap);
-
+//-------------------HELPER METHOD FOR DRAWING MANAGER----------------
+function removeAll() {
+    for (var i = 0; i < polygonArray.length; i++) {
+        polygonArray[i].overlay.setMap(null);
+    }
+    polygonArray = [];
+}
 function boundFromCircle(event) {
     var bounds = this.getBounds();
     var start = bounds.getNorthEast();
@@ -136,7 +179,6 @@ function boundFromCircle(event) {
     var center = bounds.getCenter();
     var radius = event.overlay.getRadius();
 }
-
 function boundFromRectangle(event) {
     var bounds = this.getBounds();
     var start = bounds.getNorthEast();
@@ -196,7 +238,6 @@ function getArrays(e) {
         }
     }
 }
-
 function showArrays(event) {
     // Since this polygon has only one path, we can call getPath() to return the
     // MVCArray of LatLngs.
@@ -238,12 +279,7 @@ function codeAddress() {
         }
     });
 }
-function removeAll() {
-    for (var i = 0; i < polygonArray.length; i++) {
-        polygonArray[i].overlay.setMap(null);
-    }
-    polygonArray = [];
-}
+
 
 
 
