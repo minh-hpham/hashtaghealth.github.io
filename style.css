@@ -1,57 +1,69 @@
 * {
-	margin: 0;
-	padding: 0;
-
+    margin: 0;
+    padding: 0;
 }
 
 #body {
-	height: 100%;
+    height: 100%;
 }
 
 #html {
-	height: 100%
+    height: 100%;
 }
 
 
 #map {
-
-	height:100%;
-	width:100%;
-	position: absolute;
-	left: 0;
-	top: 0;
-	}
+    height: 100%;
+    width: 100%;
+    position: absolute;
+    left: 0;
+    top: 0;
+}
 /*	start styles for the ContextMenu	*/
-.contextmenu{
- visibility: hidden;
- width: 80px;
- height: 15px;
- padding: 2px;
- position: relative;
- background-color:white;
- border:1px solid gray;
+.contextmenu {
+    font-size: 12px;
+    visibility: hidden;
+    width: 80px;
+    height: 15px;
+    padding: 2px;
+    position: relative;
+    background-color: gray;
+    border: 2px solid gray;
+    color: white;
+}
+
+.contextmenuMap {
+    font-size: 15px;
+    visibility: hidden;
+    width: 70px;
+    height: 30px;
+    padding: 5px;
+    position: relative;
+    background-color: gray;
+    color: white;
+    border: 1px solid gray;
 }
 /*	end styles for the ContextMenu	*/
 #layers {
-    position:fixed;
+    position: fixed;
     top: 10px;
     right: 5px;
-    width:280px;
+    width: 280px;
+}
 
-   }
 #title4 {
     color: #000000;
-    text-align:left;
+    text-align: left;
     font-size: 10px;
-    margin:auto;
-  }
+    margin: auto;
+}
 
 #accordion .ui-accordion-header {
     font-size: 12px;
     background-color: rgba(0, 0, 0, 0.5);
     background-image: none;
     color: white;
-   }
+}
 
 #accordion .ui-accordion-content-active {
     font-size: 13px;
@@ -60,30 +72,25 @@
     background-color: rgba(0, 0, 0, 0.5);
     background-image: none;
     color: white;
-
 }
 
-#dialog{
-	font-size: 12px;
-
-
-	}
+#dialog {
+    font-size: 12px;
+}
 
 #h4 {
-	  color: #FF0000;
-	  text-align:left;
-      font-size: 10px;
-	}
+    color: #FF0000;
+    text-align: left;
+    font-size: 10px;
+}
 
 #logo {
-	position:fixed;
+    position: fixed;
     top: 0px;
-	left:35%;
+    left: 35%;
+}
 
-
-   }
-
-   button, input[type='button'] {
+button, input[type='button'] {
     padding: .25em;
     display: block;
 }

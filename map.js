@@ -1,6 +1,7 @@
-var map, cartoLayer, infoWindow, polygonArray, contextMenu, lastCoordinate;
+var map,mapMenu, cartoLayer, infoWindow, polygonArray, contextMenu, regions;
 //-------------------------------------------BASE MAP--------------------------------------------
 polygonArray = [];
+regions = [];
 var latlng = new google.maps.LatLng(40.00, -100.00);
 var styledMap;
 var styles;
@@ -99,8 +100,8 @@ layers.push(new CartoDBLayer('Fair/Poor Health', 'https://hashtaghealth.carto.co
 function initMap() {
     //-----------------------------DRAWING MANAGER AND ITS CONTENT-----------------------------------------
     //Creating a context menu to use it in event handler
-    ContextMenuSetUp();
-    contextMenu = new ContextMenuClass(map);
+    DrawnMenuSetUp();
+    contextMenu = new ContextMenuDrawing(map);
 
     drawingManager = new google.maps.drawing.DrawingManager(drawnOptions);
     drawingManager.setMap(map);
@@ -116,56 +117,28 @@ function initMap() {
             });
         });
     });
-    //----------------------------END OF DRAWING MANAGER-------------------------------------------------
 
+    MapMenuSetUp();
+    mapMenu = new ContextMenuMap(map);
+    google.maps.event.addListener(map, 'rightclick', function (e) {
+        mapMenu.show(e.latLng);
+        document.getElementById('add').addEventListener('click', function () {
+            addToRegions(e.latLng);
+        });
+        document.getElementById('not add').addEventListener('click', function () {
+            removeFromRegions(e.latLng);
+        });
+    });
+
+   
+    
     // GET BOUNDS SO LIMIT ONLY COORDINATES WITHIN THE SHAPES
     // google.maps.event.addListener(drawingManager, 'overlaycomplete', getArrays);
 }
 google.maps.event.addDomListener(window, 'load', initMap);
 
 
-//-------------------MENU CONTEXT TO DELETE SHAPE---------------------
-// Defining the context menu class.
-function ContextMenuClass(map) {
-    this.setMap(map);
-    this.map = map;
-    this.mapDiv = map.getDiv();
-    this.menuDiv = null;
-};
-// set up function for this menu
-function ContextMenuSetUp() {
-    ContextMenuClass.prototype = new google.maps.OverlayView();
-    ContextMenuClass.prototype.draw = function () { };
-    ContextMenuClass.prototype.onAdd = function () {
-        var that = this;
-        this.menuDiv = document.createElement('div');
-        this.menuDiv.className = 'contextmenu';
-        this.menuDiv.innerHTML = '<a id="rm">Remove Shape</a>';
-        //this.menuDiv.innerHTML = '<a href="javascript:remove()">Remove Shape</a>';
-        this.getPanes().floatPane.appendChild(this.menuDiv);
-        //This event listener below will close the context menu
-        //on map click
-        google.maps.event.addListener(this.map, 'click', function (mouseEvent) {
-            that.hide();
-        });
-    };
-    ContextMenuClass.prototype.onRemove = function () {
-        this.menuDiv.parentNode.removeChild(this.menuDiv);
-    };
-    ContextMenuClass.prototype.show = function (coord) {
-        var proj = this.getProjection();
-        var mouseCoords = proj.fromLatLngToDivPixel(coord);
-        var left = Math.floor(mouseCoords.x);
-        var top = Math.floor(mouseCoords.y);
-        this.menuDiv.style.display = 'block';
-        this.menuDiv.style.left = left + 'px';
-        this.menuDiv.style.top = top + 'px';
-        this.menuDiv.style.visibility = 'visible';
-    };
-    ContextMenuClass.prototype.hide = function (x, y) {
-        this.menuDiv.style.visibility = 'hidden';
-    }
-}
+
 //-------------------HELPER METHODS FOR DRAWING MANAGER----------------
 function removeAll() {
     for (var i = 0; i < polygonArray.length; i++) {
@@ -262,6 +235,123 @@ function showArrays(event) {
     infoWindow.open(map);
 }
 //------------------HELPER METHODS FOR CARTO DB------------------------
+function loadLayers() {
+    for (i = 0; i < layers.length; i++) {
+        var c;
+
+        if (!hasCategoty(layers[i].category)) {
+            if (layers[i].category != '') {
+                c = addCategoryUI(layers[i].category, layers[i].name);
+            }
+            else {
+                c = getCategoryContent(layers[i].category);
+            }
+
+        }
+        else {
+            c = getCategoryContent(layers[i].category);
+        }
+
+        if (layers[i].category != '') {
+            var catTable = c.getElementsByTagName('table')[0];
+
+            var layerItem = document.createElement('tr');
+
+            var itemtd = document.createElement('td');
+
+            var itemin = document.createElement('input');
+            itemin.type = 'checkbox';
+            itemin.name = 'other';
+            itemin.id = layers[i].name;
+            itemin.onclick = showLayer;
+
+            var itemtd2 = document.createElement('td');
+            itemtd2.innerHTML = layers[i].name;
+
+            itemtd.appendChild(itemin);
+            layerItem.appendChild(itemtd);
+            layerItem.appendChild(itemtd2);
+
+            //layerItem.innerHTML = "<td><input onclick='showLayer(\""+layers[i].name+"\")' type='checkbox' name='other' id='"+layers[i].name+"' value='trafficLayer'/></td><td align='left'>"+layers[i].name+"</td>"
+
+            catTable.appendChild(layerItem);
+        }
+
+    }
+}
+
+loadLayers();
+
+function showLayer() {
+    for (i = 0; i < layers.length; i++) {
+        if (layers[i].name == this.id) {
+            if (!this.checked) {
+                layers[i].clearFromMap();
+            }
+            else {
+                layers[i].putOnMap();
+            }
+        }
+    }
+}
+
+function getCategoryContent(cat) {
+    var accordion = document.getElementById('accordion');
+    var e = accordion.getElementsByTagName("h3");
+
+    for (j = 0; j < e.length; j++) {
+        if (e[j].textContent == cat) {
+            return accordion.getElementsByTagName('div')[j];
+            break;
+        }
+        else if (j == e.length) {
+            return false;
+            break;
+        }
+    }
+}
+
+function hasCategoty(cat) {
+    var accordion = document.getElementById('accordion');
+    var e = accordion.getElementsByTagName("h3");
+
+    for (j = 0; j < e.length; j++) {
+        if (e[j].textContent == cat) {
+            return true;
+            break;
+        }
+        else if (j == e.length) {
+            return false;
+            break;
+        }
+    }
+}
+
+function addCategoryUI(tag, id) {
+    var accordion = document.getElementById('accordion');
+    var accorHeader = document.createElement('h3');
+    var accorContent = document.createElement('div');
+
+    accorHeader.innerHTML = '<strong>' + tag + '</strong>';
+    var contentTable = document.createElement('table');
+    accorContent.appendChild(contentTable);
+
+    accordion.appendChild(accorHeader);
+    accordion.appendChild(accorContent);
+
+    return accorContent;
+}
+
+//function startVisible(name) {
+//    for (i = 0; i < layers.length; i++) {
+//        if (layers[i].name == name) {
+//            layers[i].putOnMap();
+//            var checkbox = document.getElementById(name);
+//            checkbox.checked = true;
+//        }
+//    }
+//};
+
 function codeAddress() {
     var address = document.getElementById("address").value;
     geocoder.geocode({ 'address': address }, function (results, status) {
