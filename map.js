@@ -89,12 +89,12 @@ var CartoDBLayer = function (n, u, c) {
         return false;
     };
 };
-layers.push(new CartoDBLayer('Age Adjusted Mortality', 'https://hashtaghealth.carto.com/api/v2/viz/4fec2e9a-923f-11e6-9aca-0e3ebc282e83/viz.json', 'Map Layers'));
-layers.push(new CartoDBLayer('Premature Mortality Rate', 'https://hashtaghealth.carto.com/api/v2/viz/316ace20-a1c1-498d-ad60-ca2e20466449/viz.json', 'Map Layers'));
-layers.push(new CartoDBLayer('Diabetes', 'https://hashtaghealth.carto.com/api/v2/viz/e3bb2ea8-055d-4214-8479-187ffca6622a/viz.json', 'Map Layers'));
-layers.push(new CartoDBLayer('Obesity', 'https://hashtaghealth.carto.com/api/v2/viz/73fd643d-f500-48c5-9e3a-99387051b871/viz.json', 'Map Layers'));
+layers.push(new CartoDBLayer('State', 'https://hashtaghealth.carto.com/api/v2/viz/a88b82ca-0900-11e7-b06b-0e3ff518bd15/viz.json', 'Map Layers'));
+layers.push(new CartoDBLayer('County', '', 'Map Layers'));
+layers.push(new CartoDBLayer('Census Tract', '', 'Map Layers'));
+layers.push(new CartoDBLayer('ZIP code', '', 'Map Layers'));
 layers.push(new CartoDBLayer('Fair/Poor Health', 'https://hashtaghealth.carto.com/api/v2/viz/54fbfc8d-3125-481b-8d24-e5359c972d86/viz.json', 'Map Layers'));
-layers.push(new CartoDBLayer('Physical Inactivity', 'https://hashtaghealth.carto.com/api/v2/viz/5b503f86-c3b5-4d28-ae69-fe082e795200/viz.json', 'Map Layers'));
+
 //-----------------------------------------INITIALIZE MAP---------------------------------------
 function initMap() {
     //-----------------------------DRAWING MANAGER AND ITS CONTENT-----------------------------------------
@@ -104,6 +104,7 @@ function initMap() {
 
     drawingManager = new google.maps.drawing.DrawingManager(drawnOptions);
     drawingManager.setMap(map);
+    drawingManager.setDrawingMode(null);
     // Add a listener to show coordinate when right click
     google.maps.event.addListener(drawingManager, 'overlaycomplete', function (event1) {
         polygonArray.push(event1);
@@ -165,7 +166,7 @@ function ContextMenuSetUp() {
         this.menuDiv.style.visibility = 'hidden';
     }
 }
-//-------------------HELPER METHOD FOR DRAWING MANAGER----------------
+//-------------------HELPER METHODS FOR DRAWING MANAGER----------------
 function removeAll() {
     for (var i = 0; i < polygonArray.length; i++) {
         polygonArray[i].overlay.setMap(null);
@@ -260,8 +261,7 @@ function showArrays(event) {
 
     infoWindow.open(map);
 }
-// Google geocoding code
-
+//------------------HELPER METHODS FOR CARTO DB------------------------
 function codeAddress() {
     var address = document.getElementById("address").value;
     geocoder.geocode({ 'address': address }, function (results, status) {
@@ -279,62 +279,3 @@ function codeAddress() {
         }
     });
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//-------------------CARTO LAYER - INCOMPLETE--------------------------------------
-/*
-var cartoStyle = '#world_borders { ' + 'polygon-fill: #1a9850; ' + 'polygon-opacity:0.7; ' + '} ' + '#world_borders [pop2005 > 10000000] { ' + 'polygon-fill: #8cce8a ' + '} ' + '#world_borders [pop2005 > 40000000] { ' + 'polygon-fill: #fed6b0 ' + '} ' + '#world_borders [pop2005 > 70000000] { ' + 'polygon-fill: #d73027 ' + '} ';
-//Creating CartoDB layer and add it to map.
-cartodb.createLayer(map, {
-    user_name: 'gmapcookbook',
-    type: 'cartodb',
-    sublayers: [{
-        sql: 'SELECT * FROM world_borders',
-        cartocss: cartoStyle,
-        interactivity: 'cartodb_id, name, pop2005, area',
-    }]
-})
-.addTo(map)
-.done(function (layer) {
-    cartoLayer = layer;
-    //Enabling popup info window
-    cartodb.vis.Vis.addInfowindow(map, layer.getSubLayer(0),
-    ['name', 'pop2005', 'area']);
-    //Enabling UTFGrid layer to add interactivity.
-    layer.setInteraction(true);
-    layer.on('featureOver', function (e, latlng, pos, data) {
-        $('#infoDiv').html('<b>Info : </b>' + data.name +
-        ' (Population : ' + data.pop2005 + ')');
-    });
-});
-//Listening click event of the search button to filter the
-//data of map
-$('#search').click(function () {
-    var txtValue = $('#address').val();
-    cartoLayer.setQuery('SELECT * FROM world_borders WHERE name LIKE \'%' + txtValue + '%\'');
-    if (txtValue == '') {
-        cartoLayer.setCartoCSS(cartoStyle);
-    }
-    else {
-        cartoLayer.setCartoCSS('#world_borders {polygon-fill: #00000d; polygon-opacity:0.7; }');
-    }
-});
-*/
