@@ -1,4 +1,4 @@
-var map,mapMenu, cartoLayer, infoWindow, polygonArray, contextMenu, regions;
+var map, mapMenu, cartoLayer, infoWindow, polygonArray, contextMenu, regions;
 //-------------------------------------------BASE MAP--------------------------------------------
 polygonArray = [];
 regions = [];
@@ -130,14 +130,62 @@ function initMap() {
         });
     });
 
-   
     
+
     // GET BOUNDS SO LIMIT ONLY COORDINATES WITHIN THE SHAPES
     // google.maps.event.addListener(drawingManager, 'overlaycomplete', getArrays);
 }
 google.maps.event.addDomListener(window, 'load', initMap);
 
+//-------------------HELPER METHOD TO EXTRACT JSON FILE----------------
+function addToRegions(coor) {
+    
+    var query = "SELECT cartodb_id,name10 FROM states WHERE ST_Contains(the_geom, ST_GeomFromText('POINT(" + coor.lng + " " + coor.lat + ")', 4326));"
+    var options = { url: 'https://hashtaghealth.carto.com/api/v2/sql?f=geojson&q=' + encodeURIComponent(query) };
+    REQUEST(options, function (error, response, body) {
+        if (error) {
+            ALERT('Error with request: ' + error);
+        } else {
+            data = JSON.parse(body);
+            var cartodb_id = data.rows[0].cartodb_id;
+            var name = data.rows[0].name10;
+            regions.push(name);;
+            alert(name);
+        }
+    });
+    /*
+    $ajax({
+        url: 'https://hashtaghealth.carto.com/api/v2/sql?f=geojson&q=' + encodeURIComponent(query),
+        dataType: "jsonp",
+        success: function (data) {
+            var cartodb_id = data.rows[0].cartodb_id;
+            var name = data.rows[0].name10;
+            regions.push(name);
+        }
+    });
+    */
+}
 
+function getResult() {
+    alert("YOU ARE HERE");
+    var result = [];
+    for (var i = 0; i < regions.length; i++) {
+        var query = "SELECT * FROM states WHERE name10=" + regions[i] + ");"
+        $ajax({
+            url: 'https://hashtaghealth.carto.com/api/v2/sql?f=geojson&q=' + encodeURIComponent(query),
+            dataType: "jsonp",
+            success: function (data) {
+                result.concat(data);
+            }
+        });
+    }
+    
+    var JSONObject = $.parseJSON(result);
+    console.log(JSONObject);
+    alert(JSONObject[0]);
+    console.log(result);
+    regions = [];
+}
 
 //-------------------HELPER METHODS FOR DRAWING MANAGER----------------
 function removeAll() {
