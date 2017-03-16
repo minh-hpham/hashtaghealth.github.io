@@ -139,7 +139,7 @@ google.maps.event.addDomListener(window, 'load', initMap);
 
 //-------------------HELPER METHOD TO EXTRACT JSON FILE----------------
 function addToRegions(coor) {
-    
+    alert("ADD QUERY");
     var query = "SELECT cartodb_id,name10 FROM states WHERE ST_Contains(the_geom, ST_GeomFromText('POINT(" + coor.lng + " " + coor.lat + ")', 4326));"
     var options = { url: 'https://hashtaghealth.carto.com/api/v2/sql?f=geojson&q=' + encodeURIComponent(query) };
     REQUEST(options, function (error, response, body) {
@@ -167,7 +167,7 @@ function addToRegions(coor) {
 }
 
 function getResult() {
-    alert("YOU ARE HERE");
+    alert("GET TWEETS");
     var result = [];
     for (var i = 0; i < regions.length; i++) {
         var query = "SELECT * FROM states WHERE name10=" + regions[i] + ");"
