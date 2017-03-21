@@ -91,7 +91,7 @@ var CartoDBLayer = function (n, u, c) {
     };
 };
 layers.push(new CartoDBLayer('State', 'https://hashtaghealth.carto.com/api/v2/viz/a88b82ca-0900-11e7-b06b-0e3ff518bd15/viz.json', 'Map Layers'));
-layers.push(new CartoDBLayer('County', '', 'Map Layers'));
+layers.push(new CartoDBLayer('County', 'https://hashtaghealth.carto.com/api/v2/viz/d61716ee-0e4d-11e7-9c2f-0ee66e2c9693/viz.json', 'Map Layers'));
 layers.push(new CartoDBLayer('Census Tract', '', 'Map Layers'));
 layers.push(new CartoDBLayer('ZIP code', '', 'Map Layers'));
 layers.push(new CartoDBLayer('Fair/Poor Health', 'https://hashtaghealth.carto.com/api/v2/viz/54fbfc8d-3125-481b-8d24-e5359c972d86/viz.json', 'Map Layers'));
