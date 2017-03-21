@@ -308,7 +308,7 @@ function loadLayers() {
             var itemtd = document.createElement('td');
 
             var itemin = document.createElement('input');
-            itemin.type = 'checkbox';
+            itemin.type = 'radio';
             itemin.name = 'other';
             itemin.id = layers[i].name;
             itemin.onclick = showLayer;
