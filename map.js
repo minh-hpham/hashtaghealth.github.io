@@ -130,7 +130,7 @@ function initMap() {
         });
     });
 
-    
+
 
     // GET BOUNDS SO LIMIT ONLY COORDINATES WITHIN THE SHAPES
     // google.maps.event.addListener(drawingManager, 'overlaycomplete', getArrays);
@@ -179,7 +179,7 @@ function getResult() {
             }
         });
     }
-    
+
     var JSONObject = $.parseJSON(result);
     console.log(JSONObject);
     alert(JSONObject[0]);
@@ -327,19 +327,14 @@ function loadLayers() {
 
     }
 }
-
 loadLayers();
 
 function showLayer() {
     for (i = 0; i < layers.length; i++) {
-        if (layers[i].name == this.id) {
-            if (!this.checked) {
-                layers[i].clearFromMap();
-            }
-            else {
-                layers[i].putOnMap();
-            }
-        }
+        if (layers[i].name == this.id && this.checked) 
+            layers[i].putOnMap();
+        else 
+           layers[i].clearFromMap();
     }
 }
 
