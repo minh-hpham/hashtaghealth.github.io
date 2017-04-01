@@ -1,4 +1,4 @@
-var map, mapMenu, cartoLayer, infoWindow, polygonArray, contextMenu, regions;
+var map, mapMenu, cartoLayer, infoWindow, polygonArray, contextMenu, regions, geocoder;
 //-------------------------------------------BASE MAP--------------------------------------------
 polygonArray = [];
 regions = [];
@@ -10,7 +10,6 @@ var drawingManager;
 styles = [{ "featureType": "all", "elementType": "geometry.fill", "stylers": [{ "weight": "2.00" }] }, { "featureType": "all", "elementType": "geometry.stroke", "stylers": [{ "color": "#9c9c9c" }] }, { "featureType": "all", "elementType": "labels.text", "stylers": [{ "visibility": "on" }] }, { "featureType": "landscape", "elementType": "all", "stylers": [{ "color": "#f2f2f2" }] }, { "featureType": "landscape", "elementType": "geometry.fill", "stylers": [{ "color": "#ffffff" }] }, { "featureType": "landscape.man_made", "elementType": "geometry.fill", "stylers": [{ "color": "#ffffff" }] }, { "featureType": "poi", "elementType": "all", "stylers": [{ "visibility": "off" }] }, { "featureType": "road", "elementType": "all", "stylers": [{ "saturation": -100 }, { "lightness": 45 }] }, { "featureType": "road", "elementType": "geometry.fill", "stylers": [{ "color": "#eeeeee" }] }, { "featureType": "road", "elementType": "labels.text.fill", "stylers": [{ "color": "#7b7b7b" }] }, { "featureType": "road", "elementType": "labels.text.stroke", "stylers": [{ "color": "#ffffff" }] }, { "featureType": "road.highway", "elementType": "all", "stylers": [{ "visibility": "simplified" }] }, { "featureType": "road.arterial", "elementType": "labels.icon", "stylers": [{ "visibility": "off" }] }, { "featureType": "transit", "elementType": "all", "stylers": [{ "visibility": "off" }] }, { "featureType": "water", "elementType": "all", "stylers": [{ "color": "#46bcec" }, { "visibility": "on" }] }, { "featureType": "water", "elementType": "geometry.fill", "stylers": [{ "color": "#c8d7d4" }] }, { "featureType": "water", "elementType": "labels.text.fill", "stylers": [{ "color": "#070707" }] }, { "featureType": "water", "elementType": "labels.text.stroke", "stylers": [{ "color": "#ffffff" }] }];
 
 styledMap = new google.maps.StyledMapType(styles, { name: 'Styled Map' });
-
 var mapOptions = {
     zoom: 4,
     center: latlng,
@@ -32,6 +31,7 @@ var mapOptions = {
 };
 
 map = new google.maps.Map(document.getElementById('map'), mapOptions);
+
 //Associate the styled map with the MapTypeId and set it to display.
 map.mapTypes.set('map_style', styledMap);
 //-----------------------------------------DRAWN SHAPE------------------------------------------
@@ -67,6 +67,7 @@ var drawnOptions = {
 var layers = new Array();
 var cb_i = 0;
 
+
 var CartoDBLayer = function (n, u, c) {
     this.category = c;
     this.name = n;
@@ -78,6 +79,24 @@ var CartoDBLayer = function (n, u, c) {
     this.putOnMap = function () {
         cartodb.createLayer(map, u).addTo(map, l_in).on('done', function (layer) {
             l = layer;
+            var sublayer = layer.getSubLayer(0);
+            $('#search').on('click', function () {
+                var address = document.getElementById("address").value;
+                var geolocation;
+                geocoder.geocode({ 'address': address }, function (results, status) {
+                    if (status == google.maps.GeocoderStatus.OK) {
+                        geolocation = results[0].geometry.location;
+                        var marker = new google.maps.Marker({
+                            map: map,
+                            draggable: true,
+                            animation: google.maps.Animation.DROP,
+                            position: results[0].geometry.location
+                        });
+                    } else {
+                        alert("Geocode was not successful for the following reason: " + status);
+                    }
+                });             
+            });
         });
     };
     this.clearFromMap = function () {
@@ -89,6 +108,10 @@ var CartoDBLayer = function (n, u, c) {
     this.isOnMap = function () {
         return false;
     };
+
+    this.sublayer = function () {
+        return l.getSubLayer(0);
+    };
 };
 layers.push(new CartoDBLayer('State', 'https://hashtaghealth.carto.com/api/v2/viz/a88b82ca-0900-11e7-b06b-0e3ff518bd15/viz.json', 'Map Layers'));
 layers.push(new CartoDBLayer('County', 'https://hashtaghealth.carto.com/api/v2/viz/d61716ee-0e4d-11e7-9c2f-0ee66e2c9693/viz.json', 'Map Layers'));
@@ -98,6 +121,7 @@ layers.push(new CartoDBLayer('Fair/Poor Health', 'https://hashtaghealth.carto.co
 
 //-----------------------------------------INITIALIZE MAP---------------------------------------
 function initMap() {
+    geocoder = new google.maps.Geocoder();
     //-----------------------------DRAWING MANAGER AND ITS CONTENT-----------------------------------------
     //Creating a context menu to use it in event handler
     DrawnMenuSetUp();
@@ -118,17 +142,6 @@ function initMap() {
         });
     });
 
-    MapMenuSetUp();
-    mapMenu = new ContextMenuMap(map);
-    google.maps.event.addListener(map, 'rightclick', function (e) {
-        mapMenu.show(e.latLng);
-        document.getElementById('add').addEventListener('click', function () {
-            addToRegions(e.latLng);
-        });
-        document.getElementById('not add').addEventListener('click', function () {
-            removeFromRegions(e.latLng);
-        });
-    });
 
 
 
@@ -138,54 +151,10 @@ function initMap() {
 google.maps.event.addDomListener(window, 'load', initMap);
 
 //-------------------HELPER METHOD TO EXTRACT JSON FILE----------------
-function addToRegions(coor) {
-    alert("ADD QUERY");
-    var query = "SELECT cartodb_id,name10 FROM states WHERE ST_Contains(the_geom, ST_GeomFromText('POINT(" + coor.lng + " " + coor.lat + ")', 4326));"
-    var options = { url: 'https://hashtaghealth.carto.com/api/v2/sql?f=geojson&q=' + encodeURIComponent(query) };
-    REQUEST(options, function (error, response, body) {
-        if (error) {
-            ALERT('Error with request: ' + error);
-        } else {
-            data = JSON.parse(body);
-            var cartodb_id = data.rows[0].cartodb_id;
-            var name = data.rows[0].name10;
-            regions.push(name);;
-            alert(name);
-        }
-    });
-    /*
-    $ajax({
-        url: 'https://hashtaghealth.carto.com/api/v2/sql?f=geojson&q=' + encodeURIComponent(query),
-        dataType: "jsonp",
-        success: function (data) {
-            var cartodb_id = data.rows[0].cartodb_id;
-            var name = data.rows[0].name10;
-            regions.push(name);
-        }
-    });
-    */
-}
 
-function getResult() {
-    alert("GET TWEETS");
-    var result = [];
-    for (var i = 0; i < regions.length; i++) {
-        var query = "SELECT * FROM states WHERE name10=" + regions[i] + ");"
-        $ajax({
-            url: 'https://hashtaghealth.carto.com/api/v2/sql?f=geojson&q=' + encodeURIComponent(query),
-            dataType: "jsonp",
-            success: function (data) {
-                result.concat(data);
-            }
-        });
-    }
 
-    var JSONObject = $.parseJSON(result);
-    console.log(JSONObject);
-    alert(JSONObject[0]);
-    console.log(result);
-    regions = [];
-}
+
+
 
 //-------------------HELPER METHODS FOR DRAWING MANAGER----------------
 function removeAll() {
@@ -194,94 +163,8 @@ function removeAll() {
     }
     polygonArray = [];
 }
-function boundFromCircle(event) {
-    var bounds = this.getBounds();
-    var start = bounds.getNorthEast();
-    var end = bounds.getSouthWest();
-    var center = bounds.getCenter();
-    var radius = event.overlay.getRadius();
-}
-function boundFromRectangle(event) {
-    var bounds = this.getBounds();
-    var start = bounds.getNorthEast();
-    var end = bounds.getSouthWest();
-}
-function getArrays(e) {
-    if (e.type !== google.maps.drawing.OverlayType.MARKER) {
-        // Switch back to non-drawing mode after drawing a shape.
-        drawingManager.setDrawingMode(null);
-        // Add an event listener that selects the newly-drawn shape when the user
-        // mouses down on it.
-        var newShape = e.overlay;
-        newShape.type = e.type;
-        google.maps.event.addListener(newShape, 'click', function (e) {
-            if (e.vertex !== undefined) {
-                if (newShape.type === google.maps.drawing.OverlayType.POLYGON) {
-                    var path = newShape.getPaths().getAt(e.path);
-                    path.removeAt(e.vertex);
-                    if (path.length < 3) {
-                        newShape.setMap(null);
-                    }
-                }
-                if (newShape.type === google.maps.drawing.OverlayType.POLYLINE) {
-                    var path = newShape.getPath();
-                    path.removeAt(e.vertex);
-                    if (path.length < 2) {
-                        newShape.setMap(null);
-                    }
-                }
-            }
-            //setSelection(newShape);  // set draggable and editable true
-        });
-        // setSelection(newShape);
-
-        if (e.type == google.maps.drawing.OverlayType.POLYLINE || google.maps.drawing.OverlayType.POLYGON) {
-            var locations = e.overlay.getPath().getArray();
-            // assign coordinates to document id 'outout' to print out
-            document.getElementById('output').innerHTML = locations.toString();
 
 
-            //---------------OR-----------------------------------------------------------------
-            //var newpolygons = [];
-            //google.maps.event.addListener(drawingManager, 'polygoncomplete', function (polygon) {
-            //    coordinates = (polygon.getPath().getArray());
-            //    newpolygons.push(coordinates);
-            //});
-            //-----------------------------------------------------------------------------------
-        }
-        else {
-            //get lat/lng bounds of the current shape
-            var bounds = e.overlay.getBounds();
-            var start = bounds.getNorthEast();
-            var end = bounds.getSouthWest();
-            var center = bounds.getCenter();
-            //console.log(bounds.toString());    
-            document.getElementById('output').innerHTML = bounds.toString();
-        }
-    }
-}
-function showArrays(event) {
-    // Since this polygon has only one path, we can call getPath() to return the
-    // MVCArray of LatLngs.
-    var vertices = this.getPath();
-
-    var contentString = '<b>Polygon</b><br>' +
-        'Clicked location: <br>' + event.latLng.lat() + ',' + event.latLng.lng() +
-        '<br>';
-
-    // Iterate over the vertices.
-    for (var i = 0; i < vertices.getLength() ; i++) {
-        var xy = vertices.getAt(i);
-        contentString += '<br>' + 'Coordinate ' + i + ':<br>' + xy.lat() + ',' +
-            xy.lng();
-    }
-
-    // Replace the info window's content and position.
-    infoWindow.setContent(contentString);
-    infoWindow.setPosition(event.latLng);
-
-    infoWindow.open(map);
-}
 //------------------HELPER METHODS FOR CARTO DB------------------------
 function loadLayers() {
     for (i = 0; i < layers.length; i++) {
@@ -331,10 +214,11 @@ loadLayers();
 
 function showLayer() {
     for (i = 0; i < layers.length; i++) {
-        if (layers[i].name == this.id && this.checked) 
+        // each layer is just an cartodb object. not a real layer
+        if (layers[i].name == this.id && this.checked)
             layers[i].putOnMap();
-        else 
-           layers[i].clearFromMap();
+        else
+            layers[i].clearFromMap();
     }
 }
 
@@ -385,30 +269,3 @@ function addCategoryUI(tag, id) {
     return accorContent;
 }
 
-//function startVisible(name) {
-//    for (i = 0; i < layers.length; i++) {
-//        if (layers[i].name == name) {
-//            layers[i].putOnMap();
-//            var checkbox = document.getElementById(name);
-//            checkbox.checked = true;
-//        }
-//    }
-//};
-
-function codeAddress() {
-    var address = document.getElementById("address").value;
-    geocoder.geocode({ 'address': address }, function (results, status) {
-        if (status == google.maps.GeocoderStatus.OK) {
-            map.setCenter(results[0].geometry.location);
-            map.setZoom(10);
-            var marker = new google.maps.Marker({
-                map: map,
-                draggable: true,
-                animation: google.maps.Animation.DROP,
-                position: results[0].geometry.location
-            });
-        } else {
-            alert("Geocode was not successful for the following reason: " + status);
-        }
-    });
-}

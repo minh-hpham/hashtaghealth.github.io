@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
     <title>HashtagHealth-Geoportal</title>
@@ -19,8 +19,8 @@
         }
     </style>
     <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
-    
-    <link rel="stylesheet" href="http://libs.cartocdn.com/cartodb.js/v3/themes/css/cartodb.css"/>
+
+    <link rel="stylesheet" href="http://libs.cartocdn.com/cartodb.js/v3/themes/css/cartodb.css" />
     <!--[if lte IE 8]><link rel="stylesheet" href="http://libs.cartocdn.com/cartodb.js/v3.themes/css/cartodb.ie.css" / ><![endif]-->
     <script src="http://libs.cartocdn.com/cartodb.js/v3/cartodb.js"></script>
     <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
@@ -51,11 +51,12 @@
             <div>
                 <table></table>
                 <br />
-                <table>                    
+                <table>
                     <input id="address" type="textbox" placeholder="County, State">
-                    <input type="button" id="search" value="Search" onclick="codeAddress()">
-                    <input type="button" value="Remove All Shapes" onclick="removeAll()">                    
-                    <input type="button" value="Get Tweets" onclick="getResult()">
+                    <!--<input type="button" id="search" value="Search" onclick="codeAddress()">-->
+                    <input type="button" id="search" value="Search">
+                    <input type="button" value="Remove All Shapes" onclick="removeAll()">
+                    <input type="button" value="Get Result" onclick="getResult()">
                 </table>
             </div>
         </div>
@@ -64,13 +65,13 @@
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
     <script src="https://code.jquery.com/jquery-1.9.1.js"></script>
-    <script type="text/javascript"src="https://maps.google.com/maps/api/js?key=AIzaSyDRj3S_nk2WIVqQATfqV85DpVBnKI5k5NQ&libraries=geometry,drawing"></script>
+    <script type="text/javascript" src="https://maps.google.com/maps/api/js?key=AIzaSyDRj3S_nk2WIVqQATfqV85DpVBnKI5k5NQ&libraries=geometry,drawing"></script>
     <script src="http://libs.cartocdn.com/cartodb.js/v3/cartodb.uncompressed.js"></script>
     <!--<script src="https://libs.cartocdn.com/cartodb.js/v3/3.15/cartodb.js"></script>-->
     <script src="https://cartodb-libs.global.ssl.fastly.net/cartodb.js/v3/3.15/cartodb.js"></script>
     <link rel="stylesheet" type="text/css" href="style.css" />
-    <script type="text/javascript" src="map.js"></script>
-    <script type="text/javascript" src="menu.js"></script>
+    <script type="text/javascript" src="test/map.js"></script>
+    <script type="text/javascript" src="test/menu.js"></script>
     <script src="https://code.jquery.com/ui/1.10.2/jquery-ui.js"></script>
 
     <script type="text/javascript">
@@ -129,18 +130,9 @@
             $("#dialog").dialog('close');
             return false;
         };
-
-
-
-
+   
     </script>
 
-    <script type="text/javascript">
-
-        //Layers Loader
-
-       
-    </script>
 
 </body>
 </html>
