@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>HashtagHealth-Geoportal</title>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <style type="text/css">
+        html {
+            height: 100%;
+        }
+
+        body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        #map-canvas {
+            height: 100%;
+        }
+    </style>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+
+    <link rel="stylesheet" href="http://libs.cartocdn.com/cartodb.js/v3/themes/css/cartodb.css" />
+    <!--[if lte IE 8]><link rel="stylesheet" href="http://libs.cartocdn.com/cartodb.js/v3.themes/css/cartodb.ie.css" / ><![endif]-->
+    <script src="http://libs.cartocdn.com/cartodb.js/v3/cartodb.js"></script>
+    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css" />
+    <link rel="stylesheet" href="https://cartodb-libs.global.ssl.fastly.net/cartodb.js/v3/3.15/themes/css/cartodb.css" />
+    <!--THIS IS THE GOOGLE ANALYTICS TRACKING CODE-->
+    <script>
+        (function (i, s, o, g, r, a, m) {
+            i['GoogleAnalyticsObject'] = r; i[r] = i[r] || function () {
+                (i[r].q = i[r].q || []).push(arguments)
+            }, i[r].l = 1 * new Date(); a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0]; a.async = 1; a.src = g; m.parentNode.insertBefore(a, m)
+        })(window, document, 'script', 'https://www.google-analytics.com/analytics.js', 'ga');
+
+        ga('create', 'UA-85783082-1', 'auto');
+        ga('send', 'pageview');
+
+    </script>
+
+
+</head>
+
+<body>
+    <div id="map"></div>
+    <div id="layers">
+        <div id="accordion">
+            <h3><strong>Map Layers</strong></h3>
+            <div>
+                <table></table>
+
+                <table>
+                    <div class="layer_selector">
+                        <input type="radio" name="other" id="State" onclick="showLayer()">State<br>
+                        <input type="radio" name="other" id="County" onclick="showLayer()">County<br>
+                        <input type="radio" name="other" id="ZIP code" onclick="showLayer()">Zip Code<br>
+                        <br>
+                    </div>
+                    <input id="address" type="textbox" placeholder="County, State">
+                    <!--<input type="button" id="search" value="Search" onclick="codeAddress()">-->
+                    <input type="button" id="search" value="Search">
+                    <input type="button" value="Remove All Shapes" onclick="removeAll()">
+                    <input type="button" value="Get Result" onclick="getResult()">
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="https://code.jquery.com/jquery-1.9.1.js"></script>
+
+    <script src="http://libs.cartocdn.com/cartodb.js/v3/cartodb.uncompressed.js"></script>
+    <!--<script src="https://libs.cartocdn.com/cartodb.js/v3/3.15/cartodb.js"></script>-->
+    <script src="https://cartodb-libs.global.ssl.fastly.net/cartodb.js/v3/3.15/cartodb.js"></script>
+    <script type="text/javascript" src="https://maps.google.com/maps/api/js?key=AIzaSyDRj3S_nk2WIVqQATfqV85DpVBnKI5k5NQ&libraries=geometry,drawing"></script>
+    <link rel="stylesheet" type="text/css" href="style.css" />
+    <script type="text/javascript" src="map.js"></script>
+    <script type="text/javascript" src="menu.js"></script>
+    <script src="https://code.jquery.com/ui/1.10.2/jquery-ui.js"></script>
+
+    <script type="text/javascript">
+        $(function () {
+            $("#landmarksKey").dialog({
+                autoOpen: true,
+                show: {
+                    effect: "true",
+                    duration: 1000
+                },
+                hide: {
+                    effect: "false",
+                    duration: 1000
+                }
+            });
+
+            $("#opener2").click(function () {
+                $("#landmarksKey").dialog("open");
+            });
+        });
+    </script>
+    <script type="text/javascript">
+        $(function () {
+            $("#accordion").accordion();
+            $("#dialog").dialog({
+                autoOpen: true,
+                show: {
+                    effect: "blank",
+                    duration: 1000
+                },
+                hide: {
+                    effect: "fade",
+                    duration: 1000
+                }
+            }).show();
+
+            $("#dialog2").dialog({
+                autoOpen: false,
+                show: {
+                    effect: "fold",
+                    duration: 1000
+                },
+                hide: {
+                    effect: "explode",
+                    duration: 1000
+                }
+            });
+
+            $("#opener").click(function () {
+                $("#dialog2").dialog("open");
+            });
+        });
+
+
+        function closeSelf() {
+            $("#dialog").dialog('close');
+            return false;
+        };
+
+    </script>
+
+
+</body>
+</html>
