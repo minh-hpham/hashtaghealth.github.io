@@ -1,4 +1,4 @@
-var map, mapMenu, cartoLayer, infoWindow, polygonArray, contextMenu, regions;
+var map, mapMenu, cartoLayer, infoWindow, polygonArray, contextMenu, regions, geocoder;
 //-------------------------------------------BASE MAP--------------------------------------------
 polygonArray = [];
 regions = [];
@@ -78,6 +78,40 @@ var CartoDBLayer = function (n, u, c) {
     this.putOnMap = function () {
         cartodb.createLayer(map, u).addTo(map, l_in).on('done', function (layer) {
             l = layer;
+            layer.setInteraction(true);
+          
+            $('#search').on('click', function () {
+                var loc = [];
+                var address = document.getElementById("address").value;
+                
+                geocoder.geocode({ 'address': address }, function (results, status) {
+                    if (status == google.maps.GeocoderStatus.OK) {
+                        loc[0] = results[0].geometry.location.lat();
+                        loc[1] = results[0].geometry.location.lng();
+                    } else {
+                        alert("Geocode was not successful for the following reason: " + status);
+                    }
+                });
+
+                var table_name;
+                if (n == 'State')
+                    table_name = 'states';
+                else if (n == 'County')
+                    table_name = 'counties';
+                else
+                    table_name = 'zipcode';
+                layer.trigger('featureClick', null, latlng, null, { cartodb_id: 1 }, 0);
+                var sql = new cartodb.SQL({ user: 'hashtaghealth' });
+                sql.execute("SELECT * FROM public.{{table}} WHERE name10 ILIKE '%{{name}}%' ", { table: table_name, name:address})
+                    .done(function (data) {
+                        var id = data.rows[0].cartodb_id;
+                        layer.trigger('featureClick', null, [loc[0],loc[1]], null, { cartodb_id: id }, 0);
+                    }).error(function (errors) {
+                        alert(errors[0]);
+                    });
+                
+            });
+          
         });
     };
     this.clearFromMap = function () {
@@ -98,6 +132,7 @@ layers.push(new CartoDBLayer('Fair/Poor Health', 'https://hashtaghealth.carto.co
 
 //-----------------------------------------INITIALIZE MAP---------------------------------------
 function initMap() {
+    geocoder = new google.maps.Geocoder();
     //-----------------------------DRAWING MANAGER AND ITS CONTENT-----------------------------------------
     //Creating a context menu to use it in event handler
     DrawnMenuSetUp();
@@ -137,6 +172,10 @@ function initMap() {
 }
 google.maps.event.addDomListener(window, 'load', initMap);
 
+//-------------------HELPER METHOD TO ACCESS INFOWINDOW IN SEARCH-------------------------------
+function openInfowindow(layer, latlng, cartodb_id) {
+    layer.trigger('featureClick', null, latlng, null, { cartodb_id: cartodb_id }, 0);
+}
 //-------------------HELPER METHOD TO EXTRACT JSON FILE----------------
 function addToRegions(coor) {
     alert("ADD QUERY");
@@ -331,10 +370,10 @@ loadLayers();
 
 function showLayer() {
     for (i = 0; i < layers.length; i++) {
-        if (layers[i].name == this.id && this.checked) 
+        if (layers[i].name == this.id && this.checked)
             layers[i].putOnMap();
-        else 
-           layers[i].clearFromMap();
+        else
+            layers[i].clearFromMap();
     }
 }
 
