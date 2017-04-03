@@ -1,6 +1,9 @@
-var map, mapMenu, cartoLayer, infoWindow, polygonArray, contextMenu, regions, geocoder;
+var map, mapMenu, cartoLayer, contextMenu, regions, geocoder;
 //-------------------------------------------BASE MAP--------------------------------------------
-polygonArray = [];
+var polygonArray = new Array();
+var circle = new Array();
+var rectangle = new Array();
+
 regions = [];
 var latlng = new google.maps.LatLng(40.00, -100.00);
 var styledMap;
@@ -75,15 +78,26 @@ var CartoDBLayer = function (n, u, c) {
     cb_i++;
     var l_in = cb_i;
 
+    var table_name;
+    if (n == 'State')
+        table_name = 'states';
+    else if (n == 'County')
+        table_name = 'counties';
+    else
+        table_name = 'zipcode';
+
+    var withinCircle = "SELECT AVG(calories) as a, AVG(percentalc) as b, AVG(percentexe) as c,AVG(percentfas) as d,AVG(percentfoo) as e,AVG(percenthap) as f,AVG(percenthea) as g,AVG(sentalc) as h,AVG(sentex) as i,AVG(sentfastfo) as j,AVG(sentfood) as k,AVG(senthealth) as l FROM public.{{table}} WHERE ST_Distance_Sphere(the_geom, ST_MakePoint({{lon}}, {{lat}})) <= {{radius}}";
+    var withinRect = "SELECT AVG(calories) as a, AVG(percentalc) as b, AVG(percentexe) as c,AVG(percentfas) as d,AVG(percentfoo) as e,AVG(percenthap) as f,AVG(percenthea) as g,AVG(sentalc) as h,AVG(sentex) as i,AVG(sentfastfo) as j,AVG(sentfood) as k,AVG(senthealth) as l FROM public.{{table}} WHERE public.{{table}}.the_geom @ ST_MakeEnvelope({{left}}, {{bottom}}, {{right}}, {{top}}, 4326)";
+
     this.putOnMap = function () {
         cartodb.createLayer(map, u).addTo(map, l_in).on('done', function (layer) {
             l = layer;
             layer.setInteraction(true);
-          
+
             $('#search').on('click', function () {
                 var loc = [];
                 var address = document.getElementById("address").value;
-                
+
                 geocoder.geocode({ 'address': address }, function (results, status) {
                     if (status == google.maps.GeocoderStatus.OK) {
                         loc[0] = results[0].geometry.location.lat();
@@ -93,25 +107,74 @@ var CartoDBLayer = function (n, u, c) {
                     }
                 });
 
-                var table_name;
-                if (n == 'State')
-                    table_name = 'states';
-                else if (n == 'County')
-                    table_name = 'counties';
-                else
-                    table_name = 'zipcode';
-                layer.trigger('featureClick', null, latlng, null, { cartodb_id: 1 }, 0);
                 var sql = new cartodb.SQL({ user: 'hashtaghealth' });
-                sql.execute("SELECT * FROM public.{{table}} WHERE name10 ILIKE '%{{name}}%' ", { table: table_name, name:address})
+                sql.execute("SELECT * FROM public.{{table}} WHERE name10 ILIKE '%{{name}}%' ", { table: table_name, name: address })
                     .done(function (data) {
                         var id = data.rows[0].cartodb_id;
-                        layer.trigger('featureClick', null, [loc[0],loc[1]], null, { cartodb_id: id }, 0);
+                        layer.trigger('featureClick', null, [loc[0], loc[1]], null, { cartodb_id: id }, 0);
                     }).error(function (errors) {
                         alert(errors[0]);
                     });
-                
+
             });
-          
+            $('#aggregate').on('click', function () {
+                var sql = new cartodb.SQL({ user: 'hashtaghealth' });
+                for (var c = 0; c < circle.length; c++) {
+                    sql.execute(withinCircle, { table: table_name, lon: circle[c][1], lat: circle[c][0], radius: circle[c][2] })
+                        .done(function (data) {
+                            var contentString = '<div class="infobox"><h3>AVERAGE DATA IN THAT REGION</h3><br><h4>AVERAGE CALORIC DENSITY OF FOOD </h4><p>' + data.rows[0].a
+                                + "</p><h4>PERCENT ABOUT ALCOHOL</h4><p>" + data.rows[0].b
+                                + "</p><h4>PERCENT ABOUT EXERCISE</h4><p>" + data.rows[0].c
+                                + "</p><h4>PERCENT ABOUT FAST FOOD</h4><p>" + data.rows[0].d
+                                + "</p><h4> PERCENT ABOUT FOOD</h4><p>" + data.rows[0].e
+                                + "</p><h4>PERCENT THAT ARE HAPPY</h4><p>" + data.rows[0].f
+                                + "</p><h4>PERCENT ABOUT HEALTHY FOOD</h4><p>" + data.rows[0].g
+                                + "</p><h4>PERCENT ABOUT ALCOHOL THAT ARE HAPPY</h4><p>" + data.rows[0].h
+                                + "</p><h4>PERCENT OF EXERCISE TWEETS THAT ARE HAPPY</h4><p>" + data.rows[0].i
+                                + "</p><h4>PERCENT ABOUT FAST FOOD THAT ARE HAPPY</h4><p>" + data.rows[0].j
+                                + "</p><h4>PERCENT OF FOOD TWEETS THAT ARE HAPPY</h4><p>" + data.rows[0].k
+                                + "</p><h4>PERCENT ABOUT HEALTHY FOODS THAT ARE HAPPY</h4><p>" + data.rows[0].l + "</p></div>";
+
+                            // Replace the info window's content and position.
+                            var infoWindow = new google.maps.InfoWindow();
+                            infoWindow.setContent(contentString);
+                            infoWindow.setPosition(google.maps.ControlPosition.TOP_CENTER);
+                            infoWindow.open(map);
+                        }).error(function (errors) {
+                            alert(errors[0]);
+                        });
+                }
+                
+                for (var r = 0; r < rectangle.length; r++) {
+                    alert("EXECUTE");
+                    sql.execute(withinRect, { table: table_name, left: rectangle[r][0], bottom: rectangle[r][1], right: rectangle[r][2], top: rectangle[r][3] })
+                        .done(function (data) {
+                            alert(data.rows[0].b);
+                            var contentString = '<div class="infobox"><h3>AVERAGE DATA IN THAT REGION</h3><br><h4>AVERAGE CALORIC DENSITY OF FOOD </h4><p>' + data.rows[0].a
+                               + "</p><h4>PERCENT ABOUT ALCOHOL</h4><p>" + data.rows[0].b
+                               + "</p><h4>PERCENT ABOUT EXERCISE</h4><p>" + data.rows[0].c
+                               + "</p><h4>PERCENT ABOUT FAST FOOD</h4><p>" + data.rows[0].d
+                               + "</p><h4> PERCENT ABOUT FOOD</h4><p>" + data.rows[0].e
+                               + "</p><h4>PERCENT THAT ARE HAPPY</h4><p>" + data.rows[0].f
+                               + "</p><h4>PERCENT ABOUT HEALTHY FOOD</h4><p>" + data.rows[0].g
+                               + "</p><h4>PERCENT ABOUT ALCOHOL THAT ARE HAPPY</h4><p>" + data.rows[0].h
+                               + "</p><h4>PERCENT OF EXERCISE TWEETS THAT ARE HAPPY</h4><p>" + data.rows[0].i
+                               + "</p><h4>PERCENT ABOUT FAST FOOD THAT ARE HAPPY</h4><p>" + data.rows[0].j
+                               + "</p><h4>PERCENT OF FOOD TWEETS THAT ARE HAPPY</h4><p>" + data.rows[0].k
+                               + "</p><h4>PERCENT ABOUT HEALTHY FOODS THAT ARE HAPPY</h4><p>" + data.rows[0].l + "</p></div>";
+
+                            // Replace the info window's content and position.
+                            var infoWindow = new google.maps.InfoWindow();
+                            infoWindow.setContent(contentString);
+
+                            infoWindow.setPosition(google.maps.ControlPosition.TOP_CENTER);
+                            infoWindow.open(map);
+                        }).error(function (errors) {
+                            alert(errors[0]);
+                        });
+                }
+            });
+
         });
     };
     this.clearFromMap = function () {
@@ -128,7 +191,6 @@ layers.push(new CartoDBLayer('State', 'https://hashtaghealth.carto.com/api/v2/vi
 layers.push(new CartoDBLayer('County', 'https://hashtaghealth.carto.com/api/v2/viz/d61716ee-0e4d-11e7-9c2f-0ee66e2c9693/viz.json', 'Map Layers'));
 layers.push(new CartoDBLayer('Census Tract', '', 'Map Layers'));
 layers.push(new CartoDBLayer('ZIP code', '', 'Map Layers'));
-layers.push(new CartoDBLayer('Fair/Poor Health', 'https://hashtaghealth.carto.com/api/v2/viz/54fbfc8d-3125-481b-8d24-e5359c972d86/viz.json', 'Map Layers'));
 
 //-----------------------------------------INITIALIZE MAP---------------------------------------
 function initMap() {
@@ -142,8 +204,34 @@ function initMap() {
     drawingManager.setMap(map);
     drawingManager.setDrawingMode(null);
     // Add a listener to show coordinate when right click
+    google.maps.event.addListener(drawingManager, 'circlecomplete', function (shape) {
+        if (shape == null || (!(shape instanceof google.maps.Circle))) return;
+
+        var c = new Array();
+        c.push(shape.getCenter().lat());
+        c.push(shape.getCenter().lng());
+        c.push(shape.getRadius());
+        circle.push(c);
+    });
+
+    google.maps.event.addListener(drawingManager, 'rectanglecomplete', function (shape) {
+        if (shape == null || (!(shape instanceof google.maps.RECTANGLE))) return;
+        var ne = shape.getBounds().getNorthEast();
+        var sw = shape.getBounds().getSouthWest();
+
+        var r = new Array();
+        r.push(sw.lng());
+        r.push(sw.lat());
+        r.push(ne.lng());
+        r.push(ne.lat());
+
+        rectangle.push(r);
+
+    });
     google.maps.event.addListener(drawingManager, 'overlaycomplete', function (event1) {
-        polygonArray.push(event1);
+
+        polygonArray.push(event1.overlay);
+
         drawingManager.setDrawingMode(null);
         google.maps.event.addListener(event1.overlay, 'rightclick', function (event) {
             contextMenu.show(event.latLng);
@@ -172,10 +260,6 @@ function initMap() {
 }
 google.maps.event.addDomListener(window, 'load', initMap);
 
-//-------------------HELPER METHOD TO ACCESS INFOWINDOW IN SEARCH-------------------------------
-function openInfowindow(layer, latlng, cartodb_id) {
-    layer.trigger('featureClick', null, latlng, null, { cartodb_id: cartodb_id }, 0);
-}
 //-------------------HELPER METHOD TO EXTRACT JSON FILE----------------
 function addToRegions(coor) {
     alert("ADD QUERY");
@@ -206,32 +290,44 @@ function addToRegions(coor) {
 }
 
 function getResult() {
-    alert("GET TWEETS");
-    var result = [];
-    for (var i = 0; i < regions.length; i++) {
-        var query = "SELECT * FROM states WHERE name10=" + regions[i] + ");"
-        $ajax({
-            url: 'https://hashtaghealth.carto.com/api/v2/sql?f=geojson&q=' + encodeURIComponent(query),
-            dataType: "jsonp",
-            success: function (data) {
-                result.concat(data);
-            }
-        });
-    }
 
-    var JSONObject = $.parseJSON(result);
-    console.log(JSONObject);
-    alert(JSONObject[0]);
-    console.log(result);
-    regions = [];
+    //alert("GET TWEETS");
+    //var result = [];
+    //for (var i = 0; i < regions.length; i++) {
+    //    var query = "SELECT * FROM states WHERE name10=" + regions[i] + ");"
+    //    $ajax({
+    //        url: 'https://hashtaghealth.carto.com/api/v2/sql?f=geojson&q=' + encodeURIComponent(query),
+    //        dataType: "jsonp",
+    //        success: function (data) {
+    //            result.concat(data);
+    //        }
+    //    });
+    //}
+
+    //var JSONObject = $.parseJSON(result);
+    //console.log(JSONObject);
+    //alert(JSONObject[0]);
+    //console.log(result);
+    //regions = [];
 }
 
 //-------------------HELPER METHODS FOR DRAWING MANAGER----------------
 function removeAll() {
     for (var i = 0; i < polygonArray.length; i++) {
-        polygonArray[i].overlay.setMap(null);
+        polygonArray[i].setMap(null);
     }
     polygonArray = [];
+    circle = [];
+    rectangle = [];
+
+    //for (var i = 0; i < circle.length; i++) {
+    //    circle[i].setMap(null);
+    //}
+    //circle = [];
+    //for (var i = 0; i < rectangle.length; i++) {
+    //    rectangle[i].setMap(null);
+    //}
+    //rectangle = [];
 }
 function boundFromCircle(event) {
     var bounds = this.getBounds();
@@ -318,7 +414,6 @@ function showArrays(event) {
     // Replace the info window's content and position.
     infoWindow.setContent(contentString);
     infoWindow.setPosition(event.latLng);
-
     infoWindow.open(map);
 }
 //------------------HELPER METHODS FOR CARTO DB------------------------
