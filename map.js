@@ -144,7 +144,7 @@ var CartoDBLayer = function (n, u, c) {
                             alert(errors[0]);
                         });
                 }
-                
+
                 for (var r = 0; r < rectangle.length; r++) {
                     alert("EXECUTE");
                     sql.execute(withinRect, { table: table_name, left: rectangle[r][0], bottom: rectangle[r][1], right: rectangle[r][2], top: rectangle[r][3] })
