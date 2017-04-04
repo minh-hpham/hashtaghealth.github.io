@@ -87,8 +87,8 @@ var CartoDBLayer = function (n, u, c) {
     else
         table_name = 'zipcode';
 
-    var withinRect = "SELECT AVG(calories) as a, AVG(percentalc) as b, AVG(percentexe) as c,AVG(percentfas) as d,AVG(percentfoo) as e,AVG(percenthap) as f,AVG(percenthea) as g,AVG(sentalc) as h,AVG(sentex) as i,AVG(sentfastfo) as j,AVG(sentfood) as k,AVG(senthealth) as l FROM public.{{table}} WHERE public.{{table}}.the_geom @ ST_MakeEnvelope({{left}}, {{bottom}}, {{right}}, {{top}}, 4326)";
-    var withinCircle = "SELECT AVG(calories) as a, AVG(percentalc) as b, AVG(percentexe) as c,AVG(percentfas) as d,AVG(percentfoo) as e,AVG(percenthap) as f,AVG(percenthea) as g,AVG(sentalc) as h,AVG(sentex) as i,AVG(sentfastfo) as j,AVG(sentfood) as k,AVG(senthealth) as l FROM public.{{table}} WHERE ST_Distance_Sphere(the_geom, ST_MakePoint({{lon}}, {{lat}})) <= {{radius}}";
+    var withinRect = "SELECT AVG(calories) as a, AVG(percentalc) as b, AVG(percentexe) as c,AVG(percentfas) as d,AVG(percentfoo) as e,AVG(percenthap) as f,AVG(percenthea) as g,AVG(sentalc) as h,AVG(sentex) as i,AVG(sentfastfo) as j,AVG(sentfood) as k,AVG(senthealth) as l FROM public.{{table}} WHERE the_geom && ST_MakeEnvelope({{left}}, {{bottom}}, {{right}}, {{top}}, 4326)";
+    var withinCircle = "SELECT AVG(calories) as a, AVG(percentalc) as b, AVG(percentexe) as c,AVG(percentfas) as d,AVG(percentfoo) as e,AVG(percenthap) as f,AVG(percenthea) as g,AVG(sentalc) as h,AVG(sentex) as i,AVG(sentfastfo) as j,AVG(sentfood) as k,AVG(senthealth) as l FROM public.{{table}} WHERE ST_Distance_Sphere(the_geom, ST_SetSRID(ST_MakePoint({{lon}}, {{lat}}),4326)) <= {{radius}}";
 
     this.putOnMap = function () {
         cartodb.createLayer(map, u).addTo(map, l_in).on('done', function (layer) {
@@ -119,41 +119,40 @@ var CartoDBLayer = function (n, u, c) {
 
             });
             $('#aggregate').on('click', function () {
-                if (circle.length > 0)
-                {
+                if (circle.length > 0) {
                     for (var c = 0; c < circle.length; c++) {
-                        openInfoWindow(table_name, circle,c);
+                        openInfoWindowCircle(table_name, circle, c);
                     }
                 }
 
-                
-                for (var r = 0; r < rectangle.length; r++) {
-                    alert("EXECUTE");
-                    sql.execute(withinRect, { table: table_name, left: rectangle[r][0], bottom: rectangle[r][1], right: rectangle[r][2], top: rectangle[r][3] })
-                        .done(function (data) {
-                            alert(data.rows[0].b);
-                            var contentString = '<div class="infobox"><h3>AVERAGE DATA IN THAT REGION</h3><br><h4>AVERAGE CALORIC DENSITY OF FOOD </h4><p>' + data.rows[0].a
-                               + "</p><h4>PERCENT ABOUT ALCOHOL</h4><p>" + data.rows[0].b
-                               + "</p><h4>PERCENT ABOUT EXERCISE</h4><p>" + data.rows[0].c
-                               + "</p><h4>PERCENT ABOUT FAST FOOD</h4><p>" + data.rows[0].d
-                               + "</p><h4> PERCENT ABOUT FOOD</h4><p>" + data.rows[0].e
-                               + "</p><h4>PERCENT THAT ARE HAPPY</h4><p>" + data.rows[0].f
-                               + "</p><h4>PERCENT ABOUT HEALTHY FOOD</h4><p>" + data.rows[0].g
-                               + "</p><h4>PERCENT ABOUT ALCOHOL THAT ARE HAPPY</h4><p>" + data.rows[0].h
-                               + "</p><h4>PERCENT OF EXERCISE TWEETS THAT ARE HAPPY</h4><p>" + data.rows[0].i
-                               + "</p><h4>PERCENT ABOUT FAST FOOD THAT ARE HAPPY</h4><p>" + data.rows[0].j
-                               + "</p><h4>PERCENT OF FOOD TWEETS THAT ARE HAPPY</h4><p>" + data.rows[0].k
-                               + "</p><h4>PERCENT ABOUT HEALTHY FOODS THAT ARE HAPPY</h4><p>" + data.rows[0].l + "</p></div>";
-
-                            // Replace the info window's content and position.
-                            var infoWindow = new google.maps.InfoWindow();
-                            infoWindow.setContent(contentString);
-
-                            infoWindow.setPosition(google.maps.ControlPosition.TOP_CENTER);
-                            infoWindow.open(map);
-                        }).error(function (errors) {
-                            alert(errors[0]);
-                        });
+                if (rectangle.length > 0) {
+                    for (var r = 0; r < rectangle.length; r++) {
+                        openInfoWindowRectangle(table_name, rectangle, r);
+                        //alert("EXECUTE");
+                        //sql.execute(withinRect, { table: table_name, left: rectangle[r][0], bottom: rectangle[r][1], right: rectangle[r][2], top: rectangle[r][3] })
+                        //    .done(function (data) {
+                        //        alert(data.rows[0].b);
+                        //        var contentString = '<div class="infobox"><h3>AVERAGE DATA IN THAT REGION</h3><br><h4>AVERAGE CALORIC DENSITY OF FOOD </h4><p>' + data.rows[0].a
+                        //           + "</p><h4>PERCENT ABOUT ALCOHOL</h4><p>" + data.rows[0].b
+                        //           + "</p><h4>PERCENT ABOUT EXERCISE</h4><p>" + data.rows[0].c
+                        //           + "</p><h4>PERCENT ABOUT FAST FOOD</h4><p>" + data.rows[0].d
+                        //           + "</p><h4> PERCENT ABOUT FOOD</h4><p>" + data.rows[0].e
+                        //           + "</p><h4>PERCENT THAT ARE HAPPY</h4><p>" + data.rows[0].f
+                        //           + "</p><h4>PERCENT ABOUT HEALTHY FOOD</h4><p>" + data.rows[0].g
+                        //           + "</p><h4>PERCENT ABOUT ALCOHOL THAT ARE HAPPY</h4><p>" + data.rows[0].h
+                        //           + "</p><h4>PERCENT OF EXERCISE TWEETS THAT ARE HAPPY</h4><p>" + data.rows[0].i
+                        //           + "</p><h4>PERCENT ABOUT FAST FOOD THAT ARE HAPPY</h4><p>" + data.rows[0].j
+                        //           + "</p><h4>PERCENT OF FOOD TWEETS THAT ARE HAPPY</h4><p>" + data.rows[0].k
+                        //           + "</p><h4>PERCENT ABOUT HEALTHY FOODS THAT ARE HAPPY</h4><p>" + data.rows[0].l + "</p></div>";
+                        //        // Replace the info window's content and position.
+                        //        var infoWindow = new google.maps.InfoWindow();
+                        //        infoWindow.setContent(contentString);
+                        //        infoWindow.setPosition(google.maps.ControlPosition.TOP_CENTER);
+                        //        infoWindow.open(map);
+                        //    }).error(function (errors) {
+                        //        alert(errors[0]);
+                        //    });
+                    }
                 }
             });
 
@@ -168,14 +167,14 @@ var CartoDBLayer = function (n, u, c) {
     this.isOnMap = function () {
         return false;
     };
-    function openInfoWindow(table_name, circle,c) {
-        
+    function openInfoWindowCircle(table_name, circle, c) {
+
         var infoWindow = new google.maps.InfoWindow({
             position: circle[c].getCenter(),
             pixelOffset: new google.maps.Size(-30, -30)
         });
         var number = c + 1;
-        var contentString = '<div class="infobox"><h3>AVERAGE DATA IN REGION #' + number;
+        var contentString = '<div class="infobox"><h3>AVERAGE DATA IN CIRCLE #' + number;
         var sql = new cartodb.SQL({ user: 'hashtaghealth' });
         sql.execute(withinCircle, { table: table_name, lon: circle[c].getCenter().lng(), lat: circle[c].getCenter().lat(), radius: circle[c].getRadius() })
             .done(function (data) {
@@ -200,6 +199,49 @@ var CartoDBLayer = function (n, u, c) {
                 alert(errors[0]);
             });
     }
+    function openInfoWindowRectangle(table_name, rectangle, r) {
+        var ne = rectangle[r].getNorthEast();
+        var sw = rectangle[r].getSouthWest();
+        //alert(sw.lng());
+        //alert(sw.lat());
+        //alert(ne.lng());
+        //alert(ne.lat());
+
+        var infoWindow = new google.maps.InfoWindow({
+            position: ne,
+            //pixelOffset: new google.maps.Size(-30, -30)
+        });
+        var number = r + 1;
+        var contentString = '<div class="infobox"><h3>AVERAGE DATA IN RECTANGLE #' + number;
+
+        alert("EXECUTE");
+        var sql = new cartodb.SQL({ user: 'hashtaghealth' });
+        
+        sql.execute(withinRect, { table: table_name, left: sw.lng(), bottom: sw.lat(), right: ne.lng(), top: ne.lat() })
+            .done(function (data) {
+                alert(data.rows[0].a);
+                contentString += '</h3><br><h4>AVERAGE CALORIC DENSITY OF FOOD </h4><p>' + data.rows[0].a.toFixed(4)
+                   + '</p><h4>PERCENT ABOUT ALCOHOL</h4><p>' + data.rows[0].b.toFixed(4)
+                   + '</p><h4>PERCENT ABOUT EXERCISE</h4><p>' + data.rows[0].c.toFixed(4)
+                   + '</p><h4>PERCENT ABOUT FAST FOOD</h4><p>' + data.rows[0].d.toFixed(4)
+                   + '</p><h4> PERCENT ABOUT FOOD</h4><p>' + data.rows[0].e.toFixed(4)
+                   + '</p><h4>PERCENT THAT ARE HAPPY</h4><p>' + data.rows[0].f.toFixed(4)
+                   + '</p><h4>PERCENT ABOUT HEALTHY FOOD</h4><p>' + data.rows[0].g.toFixed(4)
+                   + '</p><h4>PERCENT ABOUT ALCOHOL THAT ARE HAPPY</h4><p>' + data.rows[0].h.toFixed(4)
+                   + '</p><h4>PERCENT OF EXERCISE TWEETS THAT ARE HAPPY</h4><p>' + data.rows[0].i.toFixed(4)
+                   + '</p><h4>PERCENT ABOUT FAST FOOD THAT ARE HAPPY</h4><p>' + data.rows[0].j.toFixed(4)
+                   + '</p><h4>PERCENT OF FOOD TWEETS THAT ARE HAPPY</h4><p>' + data.rows[0].k.toFixed(4)
+                   + '</p><h4>PERCENT ABOUT HEALTHY FOODS THAT ARE HAPPY</h4><p>' + data.rows[0].l.toFixed(4) + '</p></div>';
+
+                // Replace the info window's content and position.
+                infoWindow.setContent(contentString);
+                infoWindow.open(map);
+            }).error(function (errors) {
+                alert(errors[0]);
+            });
+    }
+
+
 };
 layers.push(new CartoDBLayer('State', 'https://hashtaghealth.carto.com/api/v2/viz/a88b82ca-0900-11e7-b06b-0e3ff518bd15/viz.json', 'Map Layers'));
 layers.push(new CartoDBLayer('County', 'https://hashtaghealth.carto.com/api/v2/viz/d61716ee-0e4d-11e7-9c2f-0ee66e2c9693/viz.json', 'Map Layers'));
@@ -222,109 +264,21 @@ function initMap() {
     google.maps.event.addListener(drawingManager, 'circlecomplete', function (shape) {
         if (shape == null || (!(shape instanceof google.maps.Circle))) return;
         circle.push(shape);
-        //var c = new Array();
-        //c.push(shape.getCenter().lat());
-        //c.push(shape.getCenter().lng());
-        //c.push(shape.getRadius());
-        //circle.push(c);
     });
 
-    google.maps.event.addListener(drawingManager, 'rectanglecomplete', function (shape) {
-        if (shape == null || (!(shape instanceof google.maps.RECTANGLE))) return;
-        var ne = shape.getBounds().getNorthEast();
-        var sw = shape.getBounds().getSouthWest();
-
-        var r = new Array();
-        r.push(sw.lng());
-        r.push(sw.lat());
-        r.push(ne.lng());
-        r.push(ne.lat());
-
-        rectangle.push(r);
-
-    });
-    google.maps.event.addListener(drawingManager, 'overlaycomplete', function (event1) {
-
-        polygonArray.push(event1.overlay);
-
+    google.maps.event.addListener(drawingManager, 'overlaycomplete', function (event) {
         drawingManager.setDrawingMode(null);
-        google.maps.event.addListener(event1.overlay, 'rightclick', function (event) {
-            contextMenu.show(event.latLng);
-            document.getElementById('rm').addEventListener('click', function () {
-                event1.overlay.setMap(null);
-            });
-        });
+        polygonArray.push(event.overlay);
+        //if (event.type == google.maps.drawing.OverlayType.POLYGON) {
+        //    var locations = event.overlay.getPath().getArray();
+        //    alert(locations);
+        //}
+        if (event.type === google.maps.drawing.OverlayType.RECTANGLE) {
+            rectangle.push(event.overlay.getBounds());
+        }
     });
-
-    MapMenuSetUp();
-    mapMenu = new ContextMenuMap(map);
-    google.maps.event.addListener(map, 'rightclick', function (e) {
-        mapMenu.show(e.latLng);
-        document.getElementById('add').addEventListener('click', function () {
-            addToRegions(e.latLng);
-        });
-        document.getElementById('not add').addEventListener('click', function () {
-            removeFromRegions(e.latLng);
-        });
-    });
-
-
-
-    // GET BOUNDS SO LIMIT ONLY COORDINATES WITHIN THE SHAPES
-    // google.maps.event.addListener(drawingManager, 'overlaycomplete', getArrays);
 }
 google.maps.event.addDomListener(window, 'load', initMap);
-
-//-------------------HELPER METHOD TO EXTRACT JSON FILE----------------
-function addToRegions(coor) {
-    alert("ADD QUERY");
-    var query = "SELECT cartodb_id,name10 FROM states WHERE ST_Contains(the_geom, ST_GeomFromText('POINT(" + coor.lng + " " + coor.lat + ")', 4326));"
-    var options = { url: 'https://hashtaghealth.carto.com/api/v2/sql?f=geojson&q=' + encodeURIComponent(query) };
-    REQUEST(options, function (error, response, body) {
-        if (error) {
-            ALERT('Error with request: ' + error);
-        } else {
-            data = JSON.parse(body);
-            var cartodb_id = data.rows[0].cartodb_id;
-            var name = data.rows[0].name10;
-            regions.push(name);;
-            alert(name);
-        }
-    });
-    /*
-    $ajax({
-        url: 'https://hashtaghealth.carto.com/api/v2/sql?f=geojson&q=' + encodeURIComponent(query),
-        dataType: "jsonp",
-        success: function (data) {
-            var cartodb_id = data.rows[0].cartodb_id;
-            var name = data.rows[0].name10;
-            regions.push(name);
-        }
-    });
-    */
-}
-
-function getResult() {
-
-    //alert("GET TWEETS");
-    //var result = [];
-    //for (var i = 0; i < regions.length; i++) {
-    //    var query = "SELECT * FROM states WHERE name10=" + regions[i] + ");"
-    //    $ajax({
-    //        url: 'https://hashtaghealth.carto.com/api/v2/sql?f=geojson&q=' + encodeURIComponent(query),
-    //        dataType: "jsonp",
-    //        success: function (data) {
-    //            result.concat(data);
-    //        }
-    //    });
-    //}
-
-    //var JSONObject = $.parseJSON(result);
-    //console.log(JSONObject);
-    //alert(JSONObject[0]);
-    //console.log(result);
-    //regions = [];
-}
 
 //-------------------HELPER METHODS FOR DRAWING MANAGER----------------
 function removeAll() {
@@ -334,103 +288,8 @@ function removeAll() {
     polygonArray = [];
     circle = [];
     rectangle = [];
-
-    //for (var i = 0; i < circle.length; i++) {
-    //    circle[i].setMap(null);
-    //}
-    //circle = [];
-    //for (var i = 0; i < rectangle.length; i++) {
-    //    rectangle[i].setMap(null);
-    //}
-    //rectangle = [];
 }
-function boundFromCircle(event) {
-    var bounds = this.getBounds();
-    var start = bounds.getNorthEast();
-    var end = bounds.getSouthWest();
-    var center = bounds.getCenter();
-    var radius = event.overlay.getRadius();
-}
-function boundFromRectangle(event) {
-    var bounds = this.getBounds();
-    var start = bounds.getNorthEast();
-    var end = bounds.getSouthWest();
-}
-function getArrays(e) {
-    if (e.type !== google.maps.drawing.OverlayType.MARKER) {
-        // Switch back to non-drawing mode after drawing a shape.
-        drawingManager.setDrawingMode(null);
-        // Add an event listener that selects the newly-drawn shape when the user
-        // mouses down on it.
-        var newShape = e.overlay;
-        newShape.type = e.type;
-        google.maps.event.addListener(newShape, 'click', function (e) {
-            if (e.vertex !== undefined) {
-                if (newShape.type === google.maps.drawing.OverlayType.POLYGON) {
-                    var path = newShape.getPaths().getAt(e.path);
-                    path.removeAt(e.vertex);
-                    if (path.length < 3) {
-                        newShape.setMap(null);
-                    }
-                }
-                if (newShape.type === google.maps.drawing.OverlayType.POLYLINE) {
-                    var path = newShape.getPath();
-                    path.removeAt(e.vertex);
-                    if (path.length < 2) {
-                        newShape.setMap(null);
-                    }
-                }
-            }
-            //setSelection(newShape);  // set draggable and editable true
-        });
-        // setSelection(newShape);
 
-        if (e.type == google.maps.drawing.OverlayType.POLYLINE || google.maps.drawing.OverlayType.POLYGON) {
-            var locations = e.overlay.getPath().getArray();
-            // assign coordinates to document id 'outout' to print out
-            document.getElementById('output').innerHTML = locations.toString();
-
-
-            //---------------OR-----------------------------------------------------------------
-            //var newpolygons = [];
-            //google.maps.event.addListener(drawingManager, 'polygoncomplete', function (polygon) {
-            //    coordinates = (polygon.getPath().getArray());
-            //    newpolygons.push(coordinates);
-            //});
-            //-----------------------------------------------------------------------------------
-        }
-        else {
-            //get lat/lng bounds of the current shape
-            var bounds = e.overlay.getBounds();
-            var start = bounds.getNorthEast();
-            var end = bounds.getSouthWest();
-            var center = bounds.getCenter();
-            //console.log(bounds.toString());    
-            document.getElementById('output').innerHTML = bounds.toString();
-        }
-    }
-}
-function showArrays(event) {
-    // Since this polygon has only one path, we can call getPath() to return the
-    // MVCArray of LatLngs.
-    var vertices = this.getPath();
-
-    var contentString = '<b>Polygon</b><br>' +
-        'Clicked location: <br>' + event.latLng.lat() + ',' + event.latLng.lng() +
-        '<br>';
-
-    // Iterate over the vertices.
-    for (var i = 0; i < vertices.getLength() ; i++) {
-        var xy = vertices.getAt(i);
-        contentString += '<br>' + 'Coordinate ' + i + ':<br>' + xy.lat() + ',' +
-            xy.lng();
-    }
-
-    // Replace the info window's content and position.
-    infoWindow.setContent(contentString);
-    infoWindow.setPosition(event.latLng);
-    infoWindow.open(map);
-}
 //------------------HELPER METHODS FOR CARTO DB------------------------
 function loadLayers() {
     for (i = 0; i < layers.length; i++) {
@@ -543,21 +402,3 @@ function addCategoryUI(tag, id) {
 //        }
 //    }
 //};
-
-function codeAddress() {
-    var address = document.getElementById("address").value;
-    geocoder.geocode({ 'address': address }, function (results, status) {
-        if (status == google.maps.GeocoderStatus.OK) {
-            map.setCenter(results[0].geometry.location);
-            map.setZoom(10);
-            var marker = new google.maps.Marker({
-                map: map,
-                draggable: true,
-                animation: google.maps.Animation.DROP,
-                position: results[0].geometry.location
-            });
-        } else {
-            alert("Geocode was not successful for the following reason: " + status);
-        }
-    });
-}
