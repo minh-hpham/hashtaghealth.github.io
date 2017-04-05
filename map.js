@@ -84,7 +84,7 @@ var CartoDBLayer = function (n,href, u, c)
 
     var withinRect = "SELECT AVG(calories) as a, AVG(percentalc) as b, AVG(percentexe) as c,AVG(percentfas) as d,AVG(percentfoo) as e,AVG(percenthap) as f,AVG(percenthea) as g,AVG(sentalc) as h,AVG(sentex) as i,AVG(sentfastfo) as j,AVG(sentfood) as k,AVG(senthealth) as l FROM public.{{table}} WHERE the_geom && ST_MakeEnvelope({{left}}, {{bottom}}, {{right}}, {{top}}, 4326)";
     var withinCircle = "SELECT AVG(calories) as a, AVG(percentalc) as b, AVG(percentexe) as c,AVG(percentfas) as d,AVG(percentfoo) as e,AVG(percenthap) as f,AVG(percenthea) as g,AVG(sentalc) as h,AVG(sentex) as i,AVG(sentfastfo) as j,AVG(sentfood) as k,AVG(senthealth) as l FROM public.{{table}} WHERE ST_DWITHIN(the_geom, ST_SetSRID(ST_MakePoint({{lon}}, {{lat}}),4326)::geography,{{radius}})";
-    var withinPol = "SELECT AVG(calories) as a, AVG(percentalc) as b, AVG(percentexe) as c,AVG(percentfas) as d,AVG(percentfoo) as e,AVG(percenthap) as f,AVG(percenthea) as g,AVG(sentalc) as h,AVG(sentex) as i,AVG(sentfastfo) as j,AVG(sentfood) as k,AVG(senthealth) as l FROM public.{{table}} WHERE the_geom && ST_MakePolygon(LINESTRING(100 250, 100 350, 200 350, 200 250, 100 250))";
+    var withinPol = "SELECT AVG(calories) as a, AVG(percentalc) as b, AVG(percentexe) as c,AVG(percentfas) as d,AVG(percentfoo) as e,AVG(percenthap) as f,AVG(percenthea) as g,AVG(sentalc) as h,AVG(sentex) as i,AVG(sentfastfo) as j,AVG(sentfood) as k,AVG(senthealth) as l FROM public.{{table}} WHERE the_geom && ST_Transform(ST_GeomFromText('POLYGON(({{coordinates}}))',2249),4326)";
 
     this.putOnMap = function () {
         cartodb.createLayer(map, u).addTo(map, l_in).on('done', function (layer) {
@@ -123,6 +123,12 @@ var CartoDBLayer = function (n,href, u, c)
                 if (rectangle.length > 0) {
                     for (var r = 0; r < rectangle.length; r++) {
                         openInfoWindowRectangle(table_name, rectangle, r);
+                    }
+                }
+
+                if (polygon.length > 0) {
+                    for (var r = 0; r < polygon.length; r++) {
+                        openInfoWindowPolygon(table_name, polygon, r);
                     }
                 }
             });
@@ -188,7 +194,7 @@ var CartoDBLayer = function (n,href, u, c)
                    + '</p><h4>PROPORTION ABOUT ALCOHOL</h4><p>' + data.rows[0].b.toFixed(4)
                    + '</p><h4>PROPORTION ABOUT EXERCISE</h4><p>' + data.rows[0].c.toFixed(4)
                    + '</p><h4>PROPORTION ABOUT FAST FOOD</h4><p>' + data.rows[0].d.toFixed(4)
-                   + '</p><h4> PROPORTION ABOUT FOOD</h4><p>' + data.rows[0].e.toFixed(4)
+                   + '</p><h4>PROPORTION ABOUT FOOD</h4><p>' + data.rows[0].e.toFixed(4)
                    + '</p><h4>PROPORTION THAT ARE HAPPY</h4><p>' + data.rows[0].f.toFixed(4)
                    + '</p><h4>PROPORTION ABOUT HEALTHY FOOD</h4><p>' + data.rows[0].g.toFixed(4)
                    + '</p><h4>PROPORTION ABOUT ALCOHOL THAT ARE HAPPY</h4><p>' + data.rows[0].h.toFixed(4)
@@ -197,6 +203,40 @@ var CartoDBLayer = function (n,href, u, c)
                    + '</p><h4>PROPORTION OF FOOD TWEETS THAT ARE HAPPY</h4><p>' + data.rows[0].k.toFixed(4)
                    + '</p><h4>PROPORTION ABOUT HEALTHY FOODS THAT ARE HAPPY</h4><p>' + data.rows[0].l.toFixed(4) + '</p></div>';
 
+                // Replace the info window's content and position.
+                infoWindow.setContent(contentString);
+                infoWindow.open(map);
+            }).error(function (errors) {
+                alert(errors[0]);
+            });
+    }
+    function openInfoWindowPolygon(table_name, polygon, r) {
+        alert(polygon[r][1]);
+        var infoWindow = new google.maps.InfoWindow({
+            position: polygon[r][0]
+        });
+        var number = r + 1;
+        var contentString = '<div class="infobox"><h3>AVERAGE DATA IN POLYGON #' + number;
+
+        var sql = new cartodb.SQL({ user: 'hashtaghealth' });
+
+        //sql.execute(withinPol, { table: table_name, coordinates: polygon[r][1] })
+        sql.execute("select * from public.{{table}} where ST_Contains(the_geom,ST_GeomFromText('POLYGON(({{coordinates}}))',4326))", { table: table_name, coordinates: polygon[r][1] })
+            .done(function (data) {
+                alert(data.rows[0].cartodb_id);
+                contentString += '</h3><br><h4>AVERAGE CALORIC DENSITY OF FOOD </h4><p>' + data.rows[0].a.toFixed(4)
+                   + '</p><h4>PROPORTION ABOUT ALCOHOL</h4><p>' + data.rows[0].b.toFixed(4)
+                   + '</p><h4>PROPORTION ABOUT EXERCISE</h4><p>' + data.rows[0].c.toFixed(4)
+                   + '</p><h4>PROPORTION ABOUT FAST FOOD</h4><p>' + data.rows[0].d.toFixed(4)
+                   + '</p><h4>PROPORTION ABOUT FOOD</h4><p>' + data.rows[0].e.toFixed(4)
+                   + '</p><h4>PROPORTION THAT ARE HAPPY</h4><p>' + data.rows[0].f.toFixed(4)
+                   + '</p><h4>PROPORTION ABOUT HEALTHY FOOD</h4><p>' + data.rows[0].g.toFixed(4)
+                   + '</p><h4>PROPORTION ABOUT ALCOHOL THAT ARE HAPPY</h4><p>' + data.rows[0].h.toFixed(4)
+                   + '</p><h4>PROPORTION OF EXERCISE TWEETS THAT ARE HAPPY</h4><p>' + data.rows[0].i.toFixed(4)
+                   + '</p><h4>PROPORTION ABOUT FAST FOOD THAT ARE HAPPY</h4><p>' + data.rows[0].j.toFixed(4)
+                   + '</p><h4>PROPORTION OF FOOD TWEETS THAT ARE HAPPY</h4><p>' + data.rows[0].k.toFixed(4)
+                   + '</p><h4>PROPORTION ABOUT HEALTHY FOODS THAT ARE HAPPY</h4><p>' + data.rows[0].l.toFixed(4) + '</p></div>';
+                
                 // Replace the info window's content and position.
                 infoWindow.setContent(contentString);
                 infoWindow.open(map);
@@ -224,19 +264,30 @@ function initMap() {
     drawingManager.setDrawingMode(null);
 
     startVisible('State');
+
     // Add a listener to show coordinate when right click
     google.maps.event.addListener(drawingManager, 'circlecomplete', function (shape) {
         if (shape == null || (!(shape instanceof google.maps.Circle))) return;
         circle.push(shape);
     });
+    google.maps.event.addListener(drawingManager, 'polygoncomplete', function (shape) {           
+        var vertices = shape.getPath();
+        var content = '';
+        for (var i = 0 ; i < vertices.getLength() ; i++) {
+            var xy = vertices.getAt(i);
+            content += xy.lat() + ' ' + xy.lng() + ', ';
+        }
+        var xy = vertices.getAt(0);
+        content += xy.lat() + ' ' + xy.lng();
+        var array = new Array();
+        array.push(xy);
+        array.push(content);
+        polygon.push(array);
 
+    });
     google.maps.event.addListener(drawingManager, 'overlaycomplete', function (event) {
         drawingManager.setDrawingMode(null);
         polygonArray.push(event.overlay);
-        //if (event.type == google.maps.drawing.OverlayType.POLYGON) {
-        //    var locations = event.overlay.getPath().getArray();
-        //    alert(locations);
-        //}
         if (event.type === google.maps.drawing.OverlayType.RECTANGLE) {
             rectangle.push(event.overlay.getBounds());
         }
@@ -252,6 +303,7 @@ function removeAll() {
     polygonArray = [];
     circle = [];
     rectangle = [];
+    polygon = [];
 }
 
 //------------------HELPER METHODS FOR CARTO DB------------------------
