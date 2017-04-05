@@ -53,9 +53,9 @@
                 <br />
                 <table>
                     <input id="address" type="textbox" placeholder="County, State">
-                    <input type="button" id="search" value="Search">
+                    <input type="button" id="search" value="Search"><br />
                     <br />
-                    <input type="button" id="aggregate" value="Aggregate" onclick="getResult()">
+                    <input type="button" id="aggregate" value="Aggregate">
                     <input type="button" value="Remove All" onclick="removeAll()">
                 </table>
             </div>
@@ -136,43 +136,7 @@
 
     </script>
 
-    <script type="infowindow/html" id="infowindow_template">
-        <div class="cartodb-popup">
-            <a href="#close" class="cartodb-popup-close-button close">x</a>
-
-            <div class="cartodb-popup-content-wrapper">
-                <div class="cartodb-popup-content">
-                    <!-- content.data contains the field info -->
-                    <h4>AVERAGE CALORIC DENSITY OF FOOD TWEETS</h4>
-                    <p>{{content.data.a}}</p>
-                    <h4>PERCENT OF TWEETS ABOUT ALCOHOL</h4>
-                    <p>{{content.data.b}}</p>
-                    <h4>PERCENT OF TWEETS ABOUT EXERCISE</h4>
-                    <p>{{content.data.c}}</p>
-                    <h4>PERCENT OF TWEETS ABOUT FAST FOOD</h4>
-                    <p>{{content.data.d}}</p>
-                    <h4> PERCENT OF TWEETS ABOUT FOOD</h4>
-                    <p>{{content.data.e}}</p>
-                    <h4>PERCENT OF TWEETS THAT ARE HAPPY</h4>
-                    <p>{{content.data.f}}</p>
-                    <h4>PERCENT OF TWEETS ABOUT HEALTHY FOOD</h4>
-                    <p>{{content.data.g}}</p>
-                    <h4>PERCENT OF TWEETS ABOUT ALCOHOL THAT ARE HAPPY</h4>
-                    <p>{{content.data.h}}</p>
-                    <h4>PERCENT OF EXERCISE TWEETS THAT ARE HAPPY</h4>
-                    <p>{{content.data.i}}</p>
-                    <h4>PERCENT OF TWEETS ABOUT FAST FOOD THAT ARE HAPPY</h4>
-                    <p>{{content.data.j}}</p>
-                    <h4>PERCENT OF FOOD TWEETS THAT ARE HAPPY</h4>
-                    <p>{{content.data.k}}</p>
-                    <h4>PERCENT OF TWEETS ABOUT HEALTHY FOODS THAT ARE HAPPY</h4>
-                    <p>{{content.data.l}}</p>
-
-                </div>
-            </div>
-            <div class="cartodb-popup-tip-container"></div>
-        </div>
-    </script>
+ 
 
 </body>
 </html>

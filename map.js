@@ -1,19 +1,12 @@
-var map, mapMenu, cartoLayer, contextMenu, regions, geocoder;
+var map,geocoder,drawingManager;
 
 //-------------------------------------------BASE MAP--------------------------------------------
 var polygonArray = new Array();
+var polygon = new Array();
 var circle = new Array();
 var rectangle = new Array();
 
-regions = [];
 var latlng = new google.maps.LatLng(40.00, -100.00);
-var styledMap;
-var styles;
-var drawingManager;
-//Create an array of styles.
-styles = [{ "featureType": "all", "elementType": "geometry.fill", "stylers": [{ "weight": "2.00" }] }, { "featureType": "all", "elementType": "geometry.stroke", "stylers": [{ "color": "#9c9c9c" }] }, { "featureType": "all", "elementType": "labels.text", "stylers": [{ "visibility": "on" }] }, { "featureType": "landscape", "elementType": "all", "stylers": [{ "color": "#f2f2f2" }] }, { "featureType": "landscape", "elementType": "geometry.fill", "stylers": [{ "color": "#ffffff" }] }, { "featureType": "landscape.man_made", "elementType": "geometry.fill", "stylers": [{ "color": "#ffffff" }] }, { "featureType": "poi", "elementType": "all", "stylers": [{ "visibility": "off" }] }, { "featureType": "road", "elementType": "all", "stylers": [{ "saturation": -100 }, { "lightness": 45 }] }, { "featureType": "road", "elementType": "geometry.fill", "stylers": [{ "color": "#eeeeee" }] }, { "featureType": "road", "elementType": "labels.text.fill", "stylers": [{ "color": "#7b7b7b" }] }, { "featureType": "road", "elementType": "labels.text.stroke", "stylers": [{ "color": "#ffffff" }] }, { "featureType": "road.highway", "elementType": "all", "stylers": [{ "visibility": "simplified" }] }, { "featureType": "road.arterial", "elementType": "labels.icon", "stylers": [{ "visibility": "off" }] }, { "featureType": "transit", "elementType": "all", "stylers": [{ "visibility": "off" }] }, { "featureType": "water", "elementType": "all", "stylers": [{ "color": "#46bcec" }, { "visibility": "on" }] }, { "featureType": "water", "elementType": "geometry.fill", "stylers": [{ "color": "#c8d7d4" }] }, { "featureType": "water", "elementType": "labels.text.fill", "stylers": [{ "color": "#070707" }] }, { "featureType": "water", "elementType": "labels.text.stroke", "stylers": [{ "color": "#ffffff" }] }];
-
-styledMap = new google.maps.StyledMapType(styles, { name: 'Styled Map' });
 
 var mapOptions = {
     zoom: 4,
@@ -36,8 +29,6 @@ var mapOptions = {
 };
 
 map = new google.maps.Map(document.getElementById('map'), mapOptions);
-//Associate the styled map with the MapTypeId and set it to display.
-map.mapTypes.set('map_style', styledMap);
 //-----------------------------------------DRAWN SHAPE------------------------------------------
 var drawnOptions = {
     drawingMode: google.maps.drawing.OverlayType.POLYGON,
@@ -71,9 +62,13 @@ var drawnOptions = {
 var layers = new Array();
 var cb_i = 0;
 
-var CartoDBLayer = function (n, u, c) {
+
+//CartoDB Layer
+var CartoDBLayer = function (n,href, u, c) 
+{
     this.category = c;
     this.name = n;
+    this.link = href;
     var l;
 
     cb_i++;
@@ -88,7 +83,8 @@ var CartoDBLayer = function (n, u, c) {
         table_name = 'zipcode';
 
     var withinRect = "SELECT AVG(calories) as a, AVG(percentalc) as b, AVG(percentexe) as c,AVG(percentfas) as d,AVG(percentfoo) as e,AVG(percenthap) as f,AVG(percenthea) as g,AVG(sentalc) as h,AVG(sentex) as i,AVG(sentfastfo) as j,AVG(sentfood) as k,AVG(senthealth) as l FROM public.{{table}} WHERE the_geom && ST_MakeEnvelope({{left}}, {{bottom}}, {{right}}, {{top}}, 4326)";
-    var withinCircle = "SELECT AVG(calories) as a, AVG(percentalc) as b, AVG(percentexe) as c,AVG(percentfas) as d,AVG(percentfoo) as e,AVG(percenthap) as f,AVG(percenthea) as g,AVG(sentalc) as h,AVG(sentex) as i,AVG(sentfastfo) as j,AVG(sentfood) as k,AVG(senthealth) as l FROM public.{{table}} WHERE ST_Distance_Sphere(the_geom, ST_SetSRID(ST_MakePoint({{lon}}, {{lat}}),4326)) <= {{radius}}";
+    var withinCircle = "SELECT AVG(calories) as a, AVG(percentalc) as b, AVG(percentexe) as c,AVG(percentfas) as d,AVG(percentfoo) as e,AVG(percenthap) as f,AVG(percenthea) as g,AVG(sentalc) as h,AVG(sentex) as i,AVG(sentfastfo) as j,AVG(sentfood) as k,AVG(senthealth) as l FROM public.{{table}} WHERE ST_DWITHIN(the_geom, ST_SetSRID(ST_MakePoint({{lon}}, {{lat}}),4326)::geography,{{radius}})";
+    var withinPol = "SELECT AVG(calories) as a, AVG(percentalc) as b, AVG(percentexe) as c,AVG(percentfas) as d,AVG(percentfoo) as e,AVG(percenthap) as f,AVG(percenthea) as g,AVG(sentalc) as h,AVG(sentex) as i,AVG(sentfastfo) as j,AVG(sentfood) as k,AVG(senthealth) as l FROM public.{{table}} WHERE the_geom && ST_MakePolygon(LINESTRING(100 250, 100 350, 200 350, 200 250, 100 250))";
 
     this.putOnMap = function () {
         cartodb.createLayer(map, u).addTo(map, l_in).on('done', function (layer) {
@@ -124,34 +120,9 @@ var CartoDBLayer = function (n, u, c) {
                         openInfoWindowCircle(table_name, circle, c);
                     }
                 }
-
                 if (rectangle.length > 0) {
                     for (var r = 0; r < rectangle.length; r++) {
                         openInfoWindowRectangle(table_name, rectangle, r);
-                        //alert("EXECUTE");
-                        //sql.execute(withinRect, { table: table_name, left: rectangle[r][0], bottom: rectangle[r][1], right: rectangle[r][2], top: rectangle[r][3] })
-                        //    .done(function (data) {
-                        //        alert(data.rows[0].b);
-                        //        var contentString = '<div class="infobox"><h3>AVERAGE DATA IN THAT REGION</h3><br><h4>AVERAGE CALORIC DENSITY OF FOOD </h4><p>' + data.rows[0].a
-                        //           + "</p><h4>PERCENT ABOUT ALCOHOL</h4><p>" + data.rows[0].b
-                        //           + "</p><h4>PERCENT ABOUT EXERCISE</h4><p>" + data.rows[0].c
-                        //           + "</p><h4>PERCENT ABOUT FAST FOOD</h4><p>" + data.rows[0].d
-                        //           + "</p><h4> PERCENT ABOUT FOOD</h4><p>" + data.rows[0].e
-                        //           + "</p><h4>PERCENT THAT ARE HAPPY</h4><p>" + data.rows[0].f
-                        //           + "</p><h4>PERCENT ABOUT HEALTHY FOOD</h4><p>" + data.rows[0].g
-                        //           + "</p><h4>PERCENT ABOUT ALCOHOL THAT ARE HAPPY</h4><p>" + data.rows[0].h
-                        //           + "</p><h4>PERCENT OF EXERCISE TWEETS THAT ARE HAPPY</h4><p>" + data.rows[0].i
-                        //           + "</p><h4>PERCENT ABOUT FAST FOOD THAT ARE HAPPY</h4><p>" + data.rows[0].j
-                        //           + "</p><h4>PERCENT OF FOOD TWEETS THAT ARE HAPPY</h4><p>" + data.rows[0].k
-                        //           + "</p><h4>PERCENT ABOUT HEALTHY FOODS THAT ARE HAPPY</h4><p>" + data.rows[0].l + "</p></div>";
-                        //        // Replace the info window's content and position.
-                        //        var infoWindow = new google.maps.InfoWindow();
-                        //        infoWindow.setContent(contentString);
-                        //        infoWindow.setPosition(google.maps.ControlPosition.TOP_CENTER);
-                        //        infoWindow.open(map);
-                        //    }).error(function (errors) {
-                        //        alert(errors[0]);
-                        //    });
                     }
                 }
             });
@@ -180,17 +151,17 @@ var CartoDBLayer = function (n, u, c) {
             .done(function (data) {
 
                 contentString += '</h3><br><h4>AVERAGE CALORIC DENSITY OF FOOD </h4><p>' + data.rows[0].a.toFixed(4)
-                    + '</p><h4>PERCENT ABOUT ALCOHOL</h4><p>' + data.rows[0].b.toFixed(4)
-                    + '</p><h4>PERCENT ABOUT EXERCISE</h4><p>' + data.rows[0].c.toFixed(4)
-                    + '</p><h4>PERCENT ABOUT FAST FOOD</h4><p>' + data.rows[0].d.toFixed(4)
-                    + '</p><h4> PERCENT ABOUT FOOD</h4><p>' + data.rows[0].e.toFixed(4)
-                    + '</p><h4>PERCENT THAT ARE HAPPY</h4><p>' + data.rows[0].f.toFixed(4)
-                    + '</p><h4>PERCENT ABOUT HEALTHY FOOD</h4><p>' + data.rows[0].g.toFixed(4)
-                    + '</p><h4>PERCENT ABOUT ALCOHOL THAT ARE HAPPY</h4><p>' + data.rows[0].h.toFixed(4)
-                    + '</p><h4>PERCENT OF EXERCISE TWEETS THAT ARE HAPPY</h4><p>' + data.rows[0].i.toFixed(4)
-                    + '</p><h4>PERCENT ABOUT FAST FOOD THAT ARE HAPPY</h4><p>' + data.rows[0].j.toFixed(4)
-                    + '</p><h4>PERCENT OF FOOD TWEETS THAT ARE HAPPY</h4><p>' + data.rows[0].k.toFixed(4)
-                    + '</p><h4>PERCENT ABOUT HEALTHY FOODS THAT ARE HAPPY</h4><p>' + data.rows[0].l.toFixed(4) + '</p></div>';
+                    + '</p><h4>PROPORTION ABOUT ALCOHOL</h4><p>' + data.rows[0].b.toFixed(4)
+                    + '</p><h4>PROPORTION ABOUT EXERCISE</h4><p>' + data.rows[0].c.toFixed(4)
+                    + '</p><h4>PROPORTION ABOUT FAST FOOD</h4><p>' + data.rows[0].d.toFixed(4)
+                    + '</p><h4> PROPORTION ABOUT FOOD</h4><p>' + data.rows[0].e.toFixed(4)
+                    + '</p><h4>PROPORTION THAT ARE HAPPY</h4><p>' + data.rows[0].f.toFixed(4)
+                    + '</p><h4>PROPORTION ABOUT HEALTHY FOOD</h4><p>' + data.rows[0].g.toFixed(4)
+                    + '</p><h4>PROPORTION ABOUT ALCOHOL THAT ARE HAPPY</h4><p>' + data.rows[0].h.toFixed(4)
+                    + '</p><h4>PROPORTION OF EXERCISE TWEETS THAT ARE HAPPY</h4><p>' + data.rows[0].i.toFixed(4)
+                    + '</p><h4>PROPORTION ABOUT FAST FOOD THAT ARE HAPPY</h4><p>' + data.rows[0].j.toFixed(4)
+                    + '</p><h4>PROPORTION OF FOOD TWEETS THAT ARE HAPPY</h4><p>' + data.rows[0].k.toFixed(4)
+                    + '</p><h4>PROPORTION ABOUT HEALTHY FOODS THAT ARE HAPPY</h4><p>' + data.rows[0].l.toFixed(4) + '</p></div>';
 
                 infoWindow.setContent(contentString);
                 infoWindow.open(map);
@@ -202,36 +173,29 @@ var CartoDBLayer = function (n, u, c) {
     function openInfoWindowRectangle(table_name, rectangle, r) {
         var ne = rectangle[r].getNorthEast();
         var sw = rectangle[r].getSouthWest();
-        //alert(sw.lng());
-        //alert(sw.lat());
-        //alert(ne.lng());
-        //alert(ne.lat());
 
         var infoWindow = new google.maps.InfoWindow({
             position: ne,
-            //pixelOffset: new google.maps.Size(-30, -30)
         });
         var number = r + 1;
         var contentString = '<div class="infobox"><h3>AVERAGE DATA IN RECTANGLE #' + number;
 
-        alert("EXECUTE");
         var sql = new cartodb.SQL({ user: 'hashtaghealth' });
-        
+
         sql.execute(withinRect, { table: table_name, left: sw.lng(), bottom: sw.lat(), right: ne.lng(), top: ne.lat() })
             .done(function (data) {
-                alert(data.rows[0].a);
                 contentString += '</h3><br><h4>AVERAGE CALORIC DENSITY OF FOOD </h4><p>' + data.rows[0].a.toFixed(4)
-                   + '</p><h4>PERCENT ABOUT ALCOHOL</h4><p>' + data.rows[0].b.toFixed(4)
-                   + '</p><h4>PERCENT ABOUT EXERCISE</h4><p>' + data.rows[0].c.toFixed(4)
-                   + '</p><h4>PERCENT ABOUT FAST FOOD</h4><p>' + data.rows[0].d.toFixed(4)
-                   + '</p><h4> PERCENT ABOUT FOOD</h4><p>' + data.rows[0].e.toFixed(4)
-                   + '</p><h4>PERCENT THAT ARE HAPPY</h4><p>' + data.rows[0].f.toFixed(4)
-                   + '</p><h4>PERCENT ABOUT HEALTHY FOOD</h4><p>' + data.rows[0].g.toFixed(4)
-                   + '</p><h4>PERCENT ABOUT ALCOHOL THAT ARE HAPPY</h4><p>' + data.rows[0].h.toFixed(4)
-                   + '</p><h4>PERCENT OF EXERCISE TWEETS THAT ARE HAPPY</h4><p>' + data.rows[0].i.toFixed(4)
-                   + '</p><h4>PERCENT ABOUT FAST FOOD THAT ARE HAPPY</h4><p>' + data.rows[0].j.toFixed(4)
-                   + '</p><h4>PERCENT OF FOOD TWEETS THAT ARE HAPPY</h4><p>' + data.rows[0].k.toFixed(4)
-                   + '</p><h4>PERCENT ABOUT HEALTHY FOODS THAT ARE HAPPY</h4><p>' + data.rows[0].l.toFixed(4) + '</p></div>';
+                   + '</p><h4>PROPORTION ABOUT ALCOHOL</h4><p>' + data.rows[0].b.toFixed(4)
+                   + '</p><h4>PROPORTION ABOUT EXERCISE</h4><p>' + data.rows[0].c.toFixed(4)
+                   + '</p><h4>PROPORTION ABOUT FAST FOOD</h4><p>' + data.rows[0].d.toFixed(4)
+                   + '</p><h4> PROPORTION ABOUT FOOD</h4><p>' + data.rows[0].e.toFixed(4)
+                   + '</p><h4>PROPORTION THAT ARE HAPPY</h4><p>' + data.rows[0].f.toFixed(4)
+                   + '</p><h4>PROPORTION ABOUT HEALTHY FOOD</h4><p>' + data.rows[0].g.toFixed(4)
+                   + '</p><h4>PROPORTION ABOUT ALCOHOL THAT ARE HAPPY</h4><p>' + data.rows[0].h.toFixed(4)
+                   + '</p><h4>PROPORTION OF EXERCISE TWEETS THAT ARE HAPPY</h4><p>' + data.rows[0].i.toFixed(4)
+                   + '</p><h4>PROPORTION ABOUT FAST FOOD THAT ARE HAPPY</h4><p>' + data.rows[0].j.toFixed(4)
+                   + '</p><h4>PROPORTION OF FOOD TWEETS THAT ARE HAPPY</h4><p>' + data.rows[0].k.toFixed(4)
+                   + '</p><h4>PROPORTION ABOUT HEALTHY FOODS THAT ARE HAPPY</h4><p>' + data.rows[0].l.toFixed(4) + '</p></div>';
 
                 // Replace the info window's content and position.
                 infoWindow.setContent(contentString);
@@ -243,23 +207,23 @@ var CartoDBLayer = function (n, u, c) {
 
 
 };
-layers.push(new CartoDBLayer('State', 'https://hashtaghealth.carto.com/api/v2/viz/a88b82ca-0900-11e7-b06b-0e3ff518bd15/viz.json', 'Map Layers'));
-layers.push(new CartoDBLayer('County', 'https://hashtaghealth.carto.com/api/v2/viz/d61716ee-0e4d-11e7-9c2f-0ee66e2c9693/viz.json', 'Map Layers'));
-layers.push(new CartoDBLayer('Census Tract', '', 'Map Layers'));
-layers.push(new CartoDBLayer('ZIP code', '', 'Map Layers'));
 
+//layers.push(	new LayerContainer('Subdivisions', 'https://www.cartedesign.com/farmington/subdivisions2.kmz', 'City Layers'));
+
+layers.push(new CartoDBLayer('State', 'State <a href="https://hashtaghealth.github.io/geoportal/state.txt" target="_blank">(.txt /</a><a href="https://hashtaghealth.github.io/geoportal/state.xls" target="_blank">.xls)</a>', 'https://hashtaghealth.carto.com/api/v2/viz/a88b82ca-0900-11e7-b06b-0e3ff518bd15/viz.json', 'Map Layers'));
+layers.push(new CartoDBLayer('County', 'County <a href="https://hashtaghealth.github.io/geoportal/county.txt" target="_blank">(.txt /</a><a href="https://hashtaghealth.github.io/geoportal/county.xls" target="_blank">.xls)</a>', 'https://hashtaghealth.carto.com/api/v2/viz/d61716ee-0e4d-11e7-9c2f-0ee66e2c9693/viz.json', 'Map Layers'));
+layers.push(new CartoDBLayer('Census Tract', 'Census Tract <a href="https://hashtaghealth.github.io/geoportal/tract.txt" target="_blank">(.txt /</a><a href="https://hashtaghealth.github.io/geoportal/tract.xlsx" target="_blank">.xlsx)</a>', '', 'Map Layers'));
+layers.push(new CartoDBLayer('ZIP code', 'Zip code <a href="https://hashtaghealth.github.io/geoportal/zipcode.txt" target="_blank">(.txt /</a><a href="https://hashtaghealth.github.io/geoportal/zipcode.xls" target="_blank">.xls)</a>', '', 'Map Layers'));
 
 //-----------------------------------------INITIALIZE MAP---------------------------------------
 function initMap() {
     geocoder = new google.maps.Geocoder();
-    //-----------------------------DRAWING MANAGER AND ITS CONTENT-----------------------------------------
-    //Creating a context menu to use it in event handler
-    DrawnMenuSetUp();
-    contextMenu = new ContextMenuDrawing(map);
 
     drawingManager = new google.maps.drawing.DrawingManager(drawnOptions);
     drawingManager.setMap(map);
     drawingManager.setDrawingMode(null);
+
+    startVisible('State');
     // Add a listener to show coordinate when right click
     google.maps.event.addListener(drawingManager, 'circlecomplete', function (shape) {
         if (shape == null || (!(shape instanceof google.maps.Circle))) return;
@@ -319,10 +283,11 @@ function loadLayers() {
             itemin.type = 'radio';
             itemin.name = 'other';
             itemin.id = layers[i].name;
+
             itemin.onclick = showLayer;
 
             var itemtd2 = document.createElement('td');
-            itemtd2.innerHTML = layers[i].name;
+            itemtd2.innerHTML = layers[i].link;
 
             itemtd.appendChild(itemin);
             layerItem.appendChild(itemtd);
@@ -335,6 +300,7 @@ function loadLayers() {
 
     }
 }
+
 loadLayers();
 
 function showLayer() {
@@ -393,12 +359,12 @@ function addCategoryUI(tag, id) {
     return accorContent;
 }
 
-//function startVisible(name) {
-//    for (i = 0; i < layers.length; i++) {
-//        if (layers[i].name == name) {
-//            layers[i].putOnMap();
-//            var checkbox = document.getElementById(name);
-//            checkbox.checked = true;
-//        }
-//    }
-//};
+function startVisible(name) {
+    for (i = 0; i < layers.length; i++) {
+        if (layers[i].name == name) {
+            layers[i].putOnMap();
+            var checkbox = document.getElementById(name);
+            checkbox.checked = true;
+        }
+    }
+};
